@@ -43,6 +43,23 @@
 }
 
 /* ==========================================================================
+   카드 배경 — 반투명
+   --------------------------------------------------------------------------
+   .wv-card--glass 가 이미 있지만 라이트 테마에서는 유리처럼 보이지 않는다.
+   그 클래스의 background 가 --wv-surface 인데 라이트에서 그 값이
+   --wv-neutral-0(순백, 불투명)이라 backdrop-filter 가 걸려도 뒤가 안 비친다.
+
+   waves-design-system.css 는 손대지 않는다. 여기서 토큰으로 만든다.
+   색상값을 직접 쓰지 않고 color-mix 로 --wv-surface-solid 의 알파만 낮춘다
+   (원본도 .wv-wave--1 등에서 같은 방식을 쓴다).
+
+   0.75 — 아래 「대비」 주석 참조. 본문 대비가 AA 를 넘는 선이다.
+   ========================================================================== */
+:root {
+  --app-card-bg: color-mix(in srgb, var(--wv-surface-solid) 75%, transparent);
+}
+
+/* ==========================================================================
    hidden 속성이 실제로 먹게 한다
    --------------------------------------------------------------------------
    [hidden] 의 display:none 은 브라우저 기본 시트(user-agent)에 있어서
@@ -119,12 +136,13 @@ body {
 }
 
 /* 화면 제목. 본문(18px)과 구분이 안 돼서 키웠다.
-   25px 로 잡은 이유는 앱바 한 줄에 들어가야 하기 때문이다 —
-   "충남 서해 연안 관측점" 247px + ⓘ 버튼 76px + 간격 12px = 335px < 374px.
-   28px 를 넘기면 두 줄로 감긴다. */
+   `충남` 을 떼서 "서해 연안 관측점" 이 되면서 자리가 생겼다 —
+   36px 에서 274px + ⓘ 버튼 76px + 간격 12px = 361px < 374px 로 한 줄에 든다.
+   여유가 13px 뿐이다. 실제 폰트에서 감기면 --wv-text-2xl(30px, 여유 58px)로 내린다.
+   (`충남 서해 연안 관측점` 이었을 때는 28px 이 상한이었다) */
 .wv-appbar__title {
   font-family: var(--wv-font-display);
-  font-size: var(--wv-text-xl);
+  font-size: var(--wv-text-3xl);
   line-height: var(--wv-leading-snug);
 }
 
@@ -361,7 +379,7 @@ body {
   padding: var(--wv-space-2) var(--wv-space-3);
   border-radius: var(--wv-radius);
   border: 1px solid var(--wv-border);
-  background: var(--wv-surface);
+  background: var(--app-card-bg);
   color: var(--wv-text-muted);
   font-size: var(--wv-text-sm);
   cursor: pointer;
@@ -432,24 +450,32 @@ body {
   color: var(--wv-text);
 }
 
-/* 배지 옆 한 줄. 자세한 설명은 화면 아래 근거 박스에 있다. */
-.app-stage__basisline {
-  color: var(--wv-text-subtle);
-}
+/* 근거 박스 — 화면 맨 아래, 한계 블록 바로 뒤.
+   배지 주변에 흩어져 있던 `재계산치` · `국립수산과학원 기준` 이 여기로 모였다.
 
+   한계 블록과 한 묶음으로 읽히도록 배경을 두지 않는다 —
+   위 두 블록이 배경 없는 글자인데 이것만 흰 박스면 혼자 떠 보인다.
+   구분은 첫 줄(`기준: …`)의 굵기가 맡는다. */
 .app-stage__basis {
-  padding: var(--wv-space-5);
-  border-radius: var(--wv-radius);
   align-items: flex-start;
+  color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
 }
 
-/* ⓘ 안내 — 단색 한 겹.
-   .wv-alert 기본형은 배경(--wv-info-soft)과 왼쪽 세로선(--wv-info)이
-   서로 다른 색이라 두 겹으로 보인다. 세로선을 지우고 배경만 남긴다. */
+/* ⓘ 안내 · ※ 안내 — 박스를 두지 않는다.
+   배경도 테두리도 없이 색과 크기로만 본문과 구분한다.
+   박스가 많으면 화면이 칸으로 잘려 어디를 읽어야 할지 흐려진다.
+   (요청한 --wv-text-secondary 는 없는 토큰이라 --wv-text-muted 를 쓴다)
+
+   위 카드와 붙여 둔다 — 막대를 설명하는 문장이므로 막대 가까이 있어야 한다.
+   #factors 의 gap(12px)을 상쇄해 4px 로 좁힌다. */
 .app-note {
-  background: var(--wv-surface-raised);
-  border-left: 0;
+  margin-top: calc(var(--wv-space-1) - var(--wv-space-3));
+  padding: 0;
+  background: none;
+  border: 0;
   color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
 }
 
 /* 근거 칸의 첫 줄만 조금 진하게 — 어느 기관의 기준인지가 이 칸의 제목이다 */
@@ -480,9 +506,48 @@ body {
   letter-spacing: var(--wv-tracking-tight);
 }
 
+/* ── 위쪽 요약 — 가운데 정렬 ──────────────────────────────────────
+   머리말 · 수온 · 평년 대비 · 배지 · 연속일수 · 자료 시각.
+   전부 짧은 줄이라 왼쪽에만 쌓으면 오른쪽이 비어 보인다.
+
+   아래 요인 영역부터는 왼쪽 정렬 그대로다 — 막대가 폭을 끝까지 쓰므로
+   가운데로 모으면 오히려 어긋난다.
+   앱바(`← 지도로` / `ⓘ 특보란?`)도 그대로 좌우 끝이다.
+
+   .wv-stack 은 flex column 이라 text-align 만으로는 부족하다.
+   자식 flex 컨테이너마다 축을 따로 맞춘다.
+   ---------------------------------------------------------------- */
+.app-summary {
+  gap: var(--wv-space-4);
+  text-align: center;
+}
+
+.app-summary > *,
+.app-summary .wv-stack {
+  align-items: center;
+}
+
+.app-summary .wv-row {
+  justify-content: center;
+}
+
 /* 자료 시각 — 수온과 요인의 창이 다르다는 것만 조용히 말한다 */
 .app-timing {
   color: var(--wv-text-muted);
+}
+
+/* 판정 보류 — 배경 한 겹. 왼쪽 세로선도 테두리 강조도 두지 않는다.
+   .wv-alert 기본형은 배경(--wv-info-soft)과 세로선(--wv-info)이 서로 달라
+   두 색으로 보였다. 이 화면에서 색은 뜻을 갖는 자리라 한 겹으로 둔다. */
+.app-withheld {
+  padding: var(--wv-space-5);
+  border-radius: var(--wv-radius);
+  background: var(--app-card-bg);
+  border: 1px solid var(--wv-border);
+}
+
+.app-withheld > :first-child {
+  font-weight: var(--wv-weight-medium);
 }
 
 .app-load-error {
@@ -613,7 +678,35 @@ body {
 
 .app-bar__below {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-1);
   min-height: 1.4em;
+}
+
+/* 값 옆 ⓘ — 단위 설명을 띄운다.
+   MJ/m² · ℃·일 은 단위를 모르면 값을 봐도 판단이 안 된다.
+   값보다 눈에 띄면 안 되므로 흐리게 두고, 터치 타깃만 확보한다. */
+.app-unit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -6px 0;          /* 줄 높이를 늘리지 않는다 */
+  padding: 0;
+  border: 0;
+  border-radius: var(--wv-radius-full);
+  background: none;
+  color: var(--wv-text-subtle);
+  font-size: var(--wv-text-sm);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.app-unit-btn:hover {
+  color: var(--wv-text-muted);
+  background: var(--wv-surface-raised);
 }
 
 /* 임계선 라벨. `90` 이라고 쓰지 않는다 — 오른쪽에 이미 `상위 13%` 가 있고
@@ -667,6 +760,7 @@ body {
 
   padding: var(--wv-space-5);
   border-radius: var(--wv-radius);
+  background: var(--app-card-bg);   /* .wv-card--flat 의 불투명 흰색을 덮는다 */
 }
 
 /* ── 형태로도 나눈다 ──────────────────────────────────────────────
@@ -757,6 +851,12 @@ body {
   color: var(--wv-text-muted);
 }
 
+/* 정보 화면 하단 — 출처 안내와 링크를 가운데로 */
+.app-source {
+  align-items: center;
+  text-align: center;
+}
+
 /* ==========================================================================
    한계 블록 — §11 이 "항상 노출, 7줄이 최종"이라고 못 박은 일곱 줄
    --------------------------------------------------------------------------
@@ -766,9 +866,8 @@ body {
 
    경고가 아니라 고지다. 색을 쓰지 않고 글자 굵기도 올리지 않는다.
    ========================================================================== */
+/* 박스를 두지 않는다. 색과 크기로만 본문과 구분한다. */
 .app-limits {
-  padding: var(--wv-space-5);
-  border-radius: var(--wv-radius);
   color: var(--wv-text-muted);
   font-size: var(--wv-text-sm);
   line-height: var(--wv-leading-normal);
@@ -795,25 +894,109 @@ body {
   flex: none;
 }
 
-/* 미채택 그룹 — 채택 그룹과 같은 형식으로 그리되 이름만 한 단계 흐리게.
-   막대·마커·임계선·백분위·값은 건드리지 않는다.
-   흐리게 하면 왜 못 미치는지가 안 보여서, 값을 보여 주기로 한
-   이유가 사라진다.
-
-   요청한 --wv-text-secondary 는 이 시스템에 없다.
-   --wv-text(neutral-900)에서 한 단계 내려온 --wv-text-muted(neutral-600)를 쓴다. */
-.app-group--muted .app-group__name,
-.app-group--muted .app-factor__name {
+/* 그룹 헤더의 판정 결과 — 채택 / 미채택.
+   크지 않게, 본문보다 한 단계 흐리게.
+   (요청한 --wv-text-secondary 는 없는 토큰이라 --wv-text-muted 를 쓴다) */
+.app-group__tag {
+  flex: none;
+  align-self: center;
   color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
+  font-weight: var(--wv-weight-medium);
 }
 
+/* 한 카드 안의 요인들을 옅은 선으로 나눈다.
+   카드를 요인마다 쪼개지는 않는다 — 채택 판정이 그룹 단위이기 때문이다. */
+.app-factor + .app-factor {
+  padding-top: var(--wv-space-3);
+  border-top: 1px solid var(--wv-border);
+}
+
+/* ── 그룹 헤더와 요인 이름은 어느 카드에서나 똑같다 ────────────────
+   전에는 미채택 그룹의 이름을 한 단계 흐리게 뒀는데, 그 색 차이가
+   `열유입` 과 `이전부터 높았던 수온` 이 서로 다른 폰트로 보이게 했다.
+   (글자 수에 따라 크기가 자동 조정되는 일은 없다 — 원인은 색이었다)
+
+   채택 여부는 헤더 오른쪽의 `채택` / `미채택` 표시가 말한다.
+   이름까지 흐리게 할 이유가 없어졌다.
+
+   크기·굵기·색을 여기서 못 박아 둔다. 상속으로 흘러 들어오는 값이 없다.
+   ---------------------------------------------------------------- */
+.app-group__name {
+  font-family: var(--wv-font-display);
+  font-size: var(--wv-text-lg);
+  font-weight: var(--wv-weight-medium);
+  line-height: var(--wv-leading-snug);
+  color: var(--wv-text);
+}
+
+.app-factor__name {
+  font-size: var(--wv-text-md);
+  font-weight: var(--wv-weight-regular);
+  color: var(--wv-text);
+}
+
+/* 카드 하단 한 줄 — 채택이면 사유, 미채택이면 §11 문구.
+   두 경우가 같은 자리·같은 무게로 끝나야 카드끼리 비교된다.
+   요인 목록과는 선 하나로 떨어뜨린다. */
 .app-group__verdict {
   margin-top: var(--wv-space-1);
+  padding-top: var(--wv-space-3);
+  border-top: 1px solid var(--wv-border);
 }
 
 /* 채택이 하나도 없을 때 맨 위에 오는 한 줄 */
 .app-factors__none {
   font-weight: var(--wv-weight-medium);
+}
+
+/* ==========================================================================
+   설명 화면 세로 여백 — 한 단계씩 좁힌다
+   --------------------------------------------------------------------------
+   414px 폭에서 스크롤을 덜 하도록 간격만 줄인다.
+   글씨 크기는 건드리지 않는다 — 야외에서 보는 서비스라 키워 둔 값이다.
+
+   Waves 의 .wv-gap-* 는 세 화면이 함께 쓰므로 클래스 자체를 고치지 않고
+   설명 화면(#content) 안에서만 덮어쓴다.
+
+   space-5(20) → space-4(16) / space-3(12) → space-2(8) / space-2(8) → space-1(4)
+   ========================================================================== */
+#content {
+  gap: var(--wv-space-4);
+}
+
+#content .app-group,
+#content .app-stage__basis,
+#content .app-withheld {
+  padding: var(--wv-space-4);
+}
+
+#content .app-group,
+#content .app-factors,
+#content .app-limits,
+#factors-body {
+  gap: var(--wv-space-2);
+}
+
+#content .app-factor {
+  gap: var(--wv-space-1);
+}
+
+#content .app-factor + .app-factor {
+  padding-top: var(--wv-space-2);
+}
+
+/* 막대 위아래 — 임계선이 6px 씩 뚫고 나오므로 그보다는 넓게 남긴다 */
+#content .app-bar {
+  margin: var(--wv-space-2) 0;
+}
+
+#content .app-stage {
+  gap: var(--wv-space-1);
+}
+
+.wv-screen__body {
+  padding-block: var(--wv-space-4) var(--wv-space-6);
 }
 
 /* ==========================================================================
@@ -885,4 +1068,5 @@ body {
 .app-group {
   padding: var(--wv-space-5);
   border-radius: var(--wv-radius);
+  background: var(--app-card-bg);   /* .wv-card--glass 의 불투명 흰색을 덮는다 */
 }

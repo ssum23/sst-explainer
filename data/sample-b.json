@@ -7,7 +7,7 @@
     "필드": [
       "data_quality.obs_count — 관측 횟수",
       "data_quality.sst_missing_rate — 수온 결측률",
-      "groups[background].* — 30일 누적편차 값·백분위 전부",
+      "groups[background].* — 지난 30일 누적 값·백분위 전부",
       "conditions — 조석 조건 (소조/중조/대조)",
       "groups[].factors[].as_of — 요인 자료 시각",
       "groups[].factors[].clim_sample_size — 평년 표본 수 (일사·기온 둘 다)"
@@ -52,7 +52,7 @@
     { "id":"background","name":"이전부터 높았던 수온","display_order":2,
       "adopted":null,"representative_percentile":null,
       "factors":[
-        {"id":"cum_anomaly","name":"30일 누적편차","window":"30일","as_of":null,
+        {"id":"cum_anomaly","name":"지난 30일 누적","window":"30일","as_of":null,
          "value":null,"value_raw":null,"unit":"℃·일",
          "percentile":null,"clim_sample_size":null,"quality":null}]}
   ],

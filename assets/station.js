@@ -86,7 +86,7 @@
   /* ------------------------------------------------------------------
      요인 자료 시각
      ASOS 요인(일사·기온)의 7일 창은 대상일 전날까지이고,
-     배경장(수온 30일 누적편차)만 대상일과 같다. (§7)
+     `이전부터 높았던 수온`(수온 30일 누적)만 대상일과 같다. (§7)
      그래서 as_of 가 섞인다 — 견본 A 는 7/30 과 7/31 이 함께 있다.
      화면에는 가장 이른 날짜를 쓴다. "이 날짜까지는 모든 요인에 자료가 있다"가
      참인 유일한 날짜이기 때문이다. §5 목업의 `요인: 7월 30일까지 자료` 와 같다.
@@ -101,6 +101,61 @@
     if (!dates.length) { return null; }
     return dates.sort()[0];
   }
+
+  /* ------------------------------------------------------------------
+     단위 설명 — 전부 정적 텍스트다.
+
+     근거 파일에서 읽지 않고 AI 도 쓰지 않는다. §10 검사기 대상이 아니다.
+     숫자가 들어가는 문장은 설명용 예시임을 문장에서 드러낸다 —
+     `20~25 정도입니다` · `약 12가 됩니다`. 그날의 값이 아니다.
+
+     머리말(`일사량 · MJ/m²`)은 근거 파일의 name · unit 으로 만든다.
+     요인 이름이 바뀌어도(배경장 → 이전부터 높았던 수온) 따라온다.
+     ------------------------------------------------------------------ */
+  var UNIT_NOTES = {
+    solar:
+      '하루 동안 1제곱미터에 내리쬔 햇빛 에너지의 양입니다. ' +
+      '한여름 맑은 날은 20~25 정도입니다.',
+    airtemp:
+      '최근 7일간 일 최고기온의 평균입니다.',
+    cum_anomaly:
+      '지난 30일 동안 수온이 평년보다 높았던 정도를 모두 더한 값입니다. ' +
+      '하루 평균 0.4℃ 높았다면 약 12가 됩니다.'
+  };
+
+  var unitModal = {
+    dialog: null,
+    opener: null,
+    init: function () {
+      this.dialog = $('unit-modal');
+      if (!this.dialog) { return; }
+      var self = this;
+      var close = function () {
+        if (typeof self.dialog.close === 'function' && self.dialog.open) { self.dialog.close(); }
+        else { self.dialog.removeAttribute('open'); }
+      };
+      var btn = $('unit-modal-close');
+      if (btn) { btn.addEventListener('click', close); }
+      /* 바깥(backdrop)을 눌러도 닫는다. 패널 안쪽 클릭은 통과시킨다. */
+      this.dialog.addEventListener('click', function (e) {
+        if (e.target === self.dialog) { close(); }
+      });
+      this.dialog.addEventListener('close', function () {
+        if (self.opener && self.opener.focus) { self.opener.focus(); }
+        self.opener = null;
+      });
+    },
+    open: function (factor, trigger) {
+      if (!this.dialog) { return; }
+      $('unit-modal-title').textContent = factor.name + ' · ' + factor.unit;
+      $('unit-modal-body').textContent = UNIT_NOTES[factor.id] || '';
+      this.opener = trigger || null;
+      if (typeof this.dialog.showModal === 'function') { this.dialog.showModal(); }
+      else { this.dialog.setAttribute('open', ''); }
+    }
+  };
+
+  unitModal.init();
 
   function el(tag, cls, text) {
     var n = document.createElement(tag);
@@ -154,6 +209,17 @@
        백분위와 상위%는 커지는 방향이 반대라 나란히 두면 비교가 안 된다. (§11) */
     var below = el('div', 'app-bar__below');
     below.appendChild(el('span', 'wv-caption', F.fmtValue(factor.value_raw, factor.unit)));
+
+    /* 값 옆 ⓘ — 단위 설명을 띄운다. MJ/m² · ℃·일 은 단위를 모르면
+       값을 봐도 판단이 안 된다. 설명이 있는 요인에만 붙인다. */
+    if (UNIT_NOTES[factor.id]) {
+      var info = el('button', 'app-unit-btn', 'ⓘ');
+      info.type = 'button';
+      info.setAttribute('aria-label', factor.name + ' 단위 설명');
+      info.addEventListener('click', function () { unitModal.open(factor, info); });
+      below.appendChild(info);
+    }
+
     var thLabel = el('span', 'app-bar__thlabel', '기준 ' + F.fmtTop(threshold));
     thLabel.style.left = threshold + '%';
     below.appendChild(thLabel);
@@ -168,7 +234,7 @@
      미채택 그룹도 채택 그룹과 같은 형식으로 그린다 —
      이름(창) · 상위 N% · 막대 · 값 · 임계선 라벨, 그리고 그 아래 판정 문구.
      `판정 기준에 못 미칩니다` 한 줄만 두면 왜 못 미치는지 알 수 없다.
-     견본 A 의 배경장은 백분위 61.0(상위 39%)인데 그 숫자가 화면에 없었다.
+     견본 A 의 `이전부터 높았던 수온`은 백분위 61.0(상위 39%)인데 그 숫자가 화면에 없었다.
 
      구분은 글자 농도로만 한다 — 그룹 이름과 요인 이름 한 단계 흐리게.
      막대·마커·임계선·백분위·값은 그대로 둔다. 흐리면 왜 못 미치는지가
@@ -189,10 +255,64 @@
     return g.adopted === null || g.adopted === undefined;
   }
 
+  /* 한글 조사 — 앞 글자의 받침 유무로 고른다.
+     `기온이` / `삽시도가` 처럼 갈린다. 요인 이름이 바뀔 수 있으므로
+     문구에 조사를 박아 두지 않는다. */
+  function particle(word, withJong, withoutJong) {
+    if (!word) { return withoutJong; }
+    var code = word.charCodeAt(word.length - 1);
+    var hangul = code >= 0xAC00 && code <= 0xD7A3;
+    var hasJong = hangul ? ((code - 0xAC00) % 28) !== 0 : true;
+    return hasJong ? withJong : withoutJong;
+  }
+
+  /* ------------------------------------------------------------------
+     판정 사유 — 왜 이 그룹이 채택됐는가
+
+     임계선 라벨(`기준 상위 10%`)은 사용자에게 백분위 비교를 시킨다.
+     `상위 13%` 옆에 `기준 상위 10%` 가 놓이면 13 > 10 인데 `상위` 라서
+     큰 쪽이 낮다는 것까지 알아야 읽힌다. (CHANGES #24)
+
+     요인마다 `기준에 못 미침` 을 붙이는 안은 접었다 — 채택 판정이 그룹
+     단위라, 견본 A(일사 미달 · 기온 초과 → 그룹 채택)에서 왜 채택됐는지가
+     흐려진다. 대신 카드 하단에 그룹 단위로 한 줄을 적는다.
+     ------------------------------------------------------------------ */
+  function adoptionReason(g, threshold) {
+    if (typeof threshold !== 'number') { return null; }
+    var crossed = (g.factors || []).filter(function (f) {
+      return typeof f.percentile === 'number' && f.percentile >= threshold;
+    });
+    if (!crossed.length) { return null; }
+
+    var names = crossed.map(function (f) { return f.name; });
+    var subject = names.length === 1
+      ? names[0] + particle(names[0], '이', '가')
+      : names.slice(0, -1).map(function (n) { return n + particle(n, '과', '와'); }).join(' ') +
+        ' ' + names[names.length - 1] + particle(names[names.length - 1], '이', '가');
+
+    return '→ ' + subject + ' 기준을 넘어 채택됐습니다';
+  }
+
   function groupCard(g, threshold) {
-    var card = el('div', 'wv-card wv-card--glass app-group wv-stack wv-gap-3' +
-                         (g.adopted === true ? '' : ' app-group--muted'));
-    card.appendChild(el('p', 'wv-subtitle app-group__name', g.name));
+    /* 카드는 채택 여부와 무관하게 같은 모양이다.
+       전에는 미채택 그룹에 --muted 를 붙여 이름을 흐리게 했는데,
+       그 색 차이가 두 그룹 헤더를 서로 다른 폰트로 보이게 했다.
+       구분은 아래 `채택` / `미채택` 표시가 맡는다. */
+    var card = el('div', 'wv-card wv-card--glass app-group wv-stack wv-gap-3');
+
+    /* 그룹 이름 오른쪽에 판정 결과를 붙인다.
+       채택 판정은 그룹 단위다 — 견본 A 는 일사(87.3)가 기준에 못 미치는데
+       기온(90.7)이 넘어서 그룹으로 채택된다. 카드를 요인마다 나누면
+       그 관계가 화면에서 사라지므로, 카드는 그룹째 두고 헤더에 결과를 적는다.
+
+       adopted 가 null 이면 붙이지 않는다 — 아직 못 본 것이라
+       `미채택`(봤는데 못 미쳤다)이 아니다. 카드 본문이 그 사실을 말한다. */
+    var header = el('div', 'wv-row wv-between wv-gap-3');
+    header.appendChild(el('p', 'wv-subtitle app-group__name', g.name));
+    if (!isUnknown(g)) {
+      header.appendChild(el('span', 'app-group__tag', g.adopted ? '채택' : '미채택'));
+    }
+    card.appendChild(header);
 
     if (isUnknown(g)) {
       card.appendChild(el('p', 'wv-caption app-group__verdict', '값을 아직 확인하지 못했습니다'));
@@ -203,7 +323,12 @@
       card.appendChild(factorRow(f, threshold));
     });
 
-    if (!g.adopted) {
+    if (g.adopted) {
+      var reason = adoptionReason(g, threshold);
+      if (reason) {
+        card.appendChild(el('p', 'wv-caption app-group__verdict', reason));
+      }
+    } else {
       card.appendChild(el('p', 'wv-caption app-group__verdict', '판정 기준에 못 미칩니다'));
     }
     return card;
@@ -303,11 +428,28 @@
     if (withheld) {
       /* 보류일에는 일평균이 없다. 있는 것처럼 적지 않는다. */
       setLine('data-sst', null);
-      setLine('withheld',
-        '자료 결측으로 이번 시각은 판정을 보류했습니다. (수온 결측률 ' +
-        (F.fmtMissingRate(dq.sst_missing_rate) || '—') + ')');
+      show('withheld', true);
+      setLine('withheld-main', '자료 결측으로 이번 시각은 판정을 보류했습니다');
+
+      /* 무엇이 얼마나 비었는지 밝힌다. `자료 결측`만으로는 알 수 없다.
+         만점(48회)은 파일에 없으므로 관측 횟수와 결측률에서 되돌린다 —
+         §16 의 30분→1시간 변환을 채택하면 만점이 24가 되는데,
+         48을 적어 두면 그때 조용히 틀린다.
+
+         요인 쪽 결측은 쓰지 않는다. 근거 파일에 요인별 결측 필드가 없다.
+         없는 것을 아는 척하지 않는다. */
+      var rate = dq.sst_missing_rate;
+      var obs  = dq.obs_count;
+      var detail = null;
+      if (typeof rate === 'number') {
+        detail = '수온 자료의 ' + F.fmtMissingRate(rate) + '가 비어 있습니다';
+        if (typeof obs === 'number' && rate < 1) {
+          detail += ' (' + Math.round(obs / (1 - rate)) + '회 중 ' + obs + '회 관측)';
+        }
+      }
+      setLine('withheld-detail', detail);
     } else {
-      setLine('withheld', null);
+      show('withheld', false);
       var obs = typeof dq.obs_count === 'number' ? ' (' + dq.obs_count + '회 관측)' : '';
       setLine('data-sst', d ? ('수온: ' + d + ' ' + basisWord + obs) : null);
     }
@@ -328,6 +470,14 @@
       (typeof clim.years === 'number' && typeof clim.sample_size === 'number')
         ? ('평년값: 최근 ' + clim.years + '년 · 표본 ' + clim.sample_size + '일')
         : null);
+
+    /* 채택 기준과 그것이 사전 고정값이라는 사실.
+       화면 어디에도 "왜 상위 10% 인가"가 없었다. 물리적 근거가 있는 값이
+       아니라 우리가 미리 정한 값이므로, 그 사실 자체를 적는 것이 정직하다. */
+    var th = (ev.adoption_threshold || {}).percentile;
+    var hasTh = typeof th === 'number';
+    setLine('limit-threshold-line', hasTh ? ('채택 기준: 평년 ' + F.fmtTop(th)) : null);
+    show('limit-threshold', hasTh);
 
     show('load-error', false);
     show('content', true);

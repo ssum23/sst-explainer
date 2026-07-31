@@ -30,10 +30,10 @@
         {"id":"airtemp","name":"기온","window":"7일","as_of":"2021-07-30",
          "value":34.37,"value_raw":34.3714,"unit":"℃",
          "percentile":90.7,"clim_sample_size":172,"quality":"ok"}]},
-    { "id":"background","name":"배경장","display_order":2,
+    { "id":"background","name":"이전부터 높았던 수온","display_order":2,
       "adopted":false,"representative_percentile":61.0,
       "factors":[
-        {"id":"cum_anomaly","name":"30일 누적편차","window":"30일","as_of":"2021-07-31",
+        {"id":"cum_anomaly","name":"지난 30일 누적","window":"30일","as_of":"2021-07-31",
          "value":12.40,"value_raw":12.3971,"unit":"℃·일",
          "percentile":61.0,"clim_sample_size":172,"quality":"ok"}]}
   ],

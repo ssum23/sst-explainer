@@ -54,6 +54,13 @@
       <div class="wv-stack wv-gap-5" id="content" hidden>
 
 
+        <!-- ══ 위쪽 요약 — 가운데 정렬 ═══════════════════════════════
+             머리말부터 자료 시각까지. 짧은 줄이 이어지는 구간이라
+             왼쪽에만 쌓아 두면 오른쪽이 비어 보인다.
+             아래 요인 영역부터는 막대가 폭을 쓰므로 왼쪽 정렬 그대로 둔다.
+             ============================================================ -->
+        <div class="app-summary wv-stack">
+
         <!-- 머리말 (§11 설명 머리말)
              §11 원문은 `충남 천수만 · 서산 창리` 한 줄 단정형이나,
              해역 구분이 1주차 확인 대상이라 지도와 같은 표기를 쓴다.
@@ -90,16 +97,17 @@
              해양수산부 위기경보도 이 화면에 넣지 않는다 — 창리 한 곳만 보므로
              전국 해역 수를 알 수 없어 단계 계산이 불가능하다. 정보 화면에서만 다룬다.
              ============================================================ -->
-        <section class="app-stage wv-stack wv-gap-2" aria-labelledby="app-stage-label">
-          <p class="wv-overline" id="app-stage-label">이 관측점 계산</p>
-          <!-- 배지 · 연속일수 · 기준을 세로로 쌓는다.
-               한 줄에 늘어놓으면 374px 에서 감기고, 감기는 자리가
-               글자 수에 따라 달라져 줄이 들쭉날쭉해진다. -->
+        <section class="app-stage wv-stack wv-gap-2" aria-label="이 관측점 계산">
+          <!-- 두 줄만 남긴다. 배지 옆 `재계산치` 와 아래 `국립수산과학원 기준` 은
+               화면 맨 아래 근거 박스로 모았다 — 배지 주변에 짧은 회색 줄이
+               넷이나 붙어 서로 겹쳐 보였다.
+
+               `이 값은 관측점 재계산치입니다` 는 근거 박스의 stage_caveat 가
+               이미 말하고 있다. 여기서 한 번 더 말할 필요가 없다. -->
           <div class="wv-row">
             <span class="wv-badge wv-badge--neutral app-stage__badge" id="stage-label" hidden></span>
           </div>
           <p class="wv-caption" id="stage-days" hidden></p>
-          <p class="wv-caption app-stage__basisline">국립수산과학원 기준</p>
         </section>
 
         <!-- ══ 자료 시각 (§11) ══════════════════════════════════════
@@ -111,10 +119,17 @@
           <p class="wv-caption" id="data-factor" hidden></p>
         </div>
 
+        </div><!-- /.app-summary — 여기부터 왼쪽 정렬 -->
+
         <!-- 판정 보류 (§11).
              보류일에는 이 문구가 요인 영역 자리에 대신 들어간다.
              그래서 요인 영역 바로 위에 둔다 — 두 번 말하지 않기 위해서다. -->
-        <p class="wv-alert" id="withheld" hidden></p>
+        <div class="app-withheld wv-stack wv-gap-3" id="withheld" hidden>
+          <p id="withheld-main"></p>
+          <!-- 무엇이 비었는지 밝힌다. 지금 밝힐 수 있는 것은 수온뿐이다 —
+               요인별 결측 정보가 근거 파일에 없다. 없는 것을 아는 척하지 않는다. -->
+          <p class="wv-caption" id="withheld-detail" hidden></p>
+        </div>
 
         <!-- ══ 요인 영역 (§11 「요인 영역」·「요인 영역 표시 규칙」) ══════
              막대는 채우는 바가 아니라 트랙 위의 점 하나다.
@@ -129,25 +144,10 @@
           <div class="wv-stack wv-gap-3" id="factors-body"></div>
           <!-- ⓘ 안내는 막대가 그려진 화면에서만 띄운다.
                견본 B·C 에는 막대가 없어 안내할 대상이 없다. (§11) -->
-          <p class="wv-alert app-note" id="factors-note" hidden>
+          <p class="app-note" id="factors-note" hidden>
             ⓘ 가로 위치는 평년 분포에서 얼마나 바깥인지를 나타냅니다. 원인 기여도가 아닙니다.
           </p>
         </section>
-
-        <!-- ══ 근거 박스 ═══════════════════════════════════════════
-             배지에서 내려온 자세한 설명. ⓘ 안내 아래에 둔다.
-             수치와 막대를 다 본 뒤에 "이게 무슨 기준이었나"를 읽는 순서다.
-             ============================================================ -->
-        <div class="app-stage__basis wv-card--flat wv-stack wv-gap-2">
-          <p class="wv-caption app-stage__source">기준: 국립수산과학원 고수온 특보</p>
-          <p class="wv-caption" id="stage-caveat" hidden></p>
-          <!-- 링크할 정확한 특보 페이지 주소는 1주차 확정 대상이다 (§16).
-               확인 전까지 기관 대표 주소로 둔다. -->
-          <a class="wv-btn wv-btn--ghost wv-btn--sm app-stage__link"
-             href="https://www.nifs.go.kr" target="_blank" rel="noopener">
-            국립수산과학원 발표 확인 ↗
-          </a>
-        </div>
 
         <p class="wv-caption">
           이 화면은 아직 자료 시각과 요인까지 만들었습니다. 설명 문장은 준비 중입니다.
@@ -169,7 +169,7 @@
         <!-- 두 박스로 나눈다. 성격이 다르다 —
              앞은 서비스가 하지 않는 일, 뒤는 자료의 한계다.
              일곱 줄과 문구는 그대로다. 나누기만 한다. -->
-        <section class="app-limits wv-card--flat wv-stack wv-gap-3" aria-labelledby="limits-title-1">
+        <section class="app-limits wv-stack wv-gap-3" aria-labelledby="limits-title-1">
           <p class="app-limits__title" id="limits-title-1">이 서비스가 답하지 않는 것</p>
           <ul class="app-limits__list">
             <li>며칠 더 갈지 예측하지 않습니다</li>
@@ -178,7 +178,7 @@
           </ul>
         </section>
 
-        <section class="app-limits wv-card--flat wv-stack wv-gap-3" aria-labelledby="limits-title-2">
+        <section class="app-limits wv-stack wv-gap-3" aria-labelledby="limits-title-2">
           <p class="app-limits__title" id="limits-title-2">이 자료의 한계</p>
           <div class="wv-stack wv-gap-1">
             <!-- {n} 두 개는 climatology.years · climatology.sample_size 다.
@@ -186,11 +186,54 @@
             <p id="limit-climatology"></p>
             <p>기후평년값(30년) 기준에는 못 미칩니다</p>
             <p>관측점 한 곳의 자료이며 해역 전체를 대표하지 않습니다</p>
+            <!-- 채택 기준의 근거. 화면 어디에도 "왜 상위 10% 인가"가 없었다.
+                 물리적 근거가 있는 값이 아니라 우리가 미리 정한 값이므로
+                 그 사실 자체를 적는 것이 정직하다.
+                 숫자는 adoption_threshold.percentile 에서 읽는다. -->
+            <div id="limit-threshold" hidden>
+              <p id="limit-threshold-line"></p>
+              <p>해양 고수온 연구에서 널리 쓰는 기준이며, 결과에 따라 바꾸지 않습니다</p>
+            </div>
             <p>공식 특보는 국립수산과학원 발표를 따르십시오</p>
           </div>
         </section>
 
+        <!-- ══ 근거 박스 ═══════════════════════════════════════════
+             한계 블록 바로 아래. 성격이 같다 —
+             `이 자료의 한계` 가 우리 자료의 한계를 말하고,
+             이 박스가 "그래서 무엇을 따라야 하는가"로 받는다.
+             §11 이 "7줄이 최종"이라고 못 박은 블록 안에 섞지는 않는다.
+             ============================================================ -->
+        <div class="app-stage__basis wv-stack wv-gap-2">
+          <p class="wv-caption app-stage__source">기준: 국립수산과학원 고수온 특보</p>
+          <p class="wv-caption" id="stage-caveat" hidden></p>
+          <!-- 링크할 정확한 특보 페이지 주소는 1주차 확정 대상이다 (§16).
+               확인 전까지 기관 대표 주소로 둔다. -->
+          <a class="wv-btn wv-btn--ghost wv-btn--sm app-stage__link"
+             href="https://www.nifs.go.kr" target="_blank" rel="noopener">
+            국립수산과학원 발표 확인 ↗
+          </a>
+        </div>
+
       </div>
+
+      <!-- ══ 단위 설명 ═══════════════════════════════════════════════
+           요인 값 옆 ⓘ 를 누르면 열린다. 준비 중 지점 안내(index.html)와
+           같은 형태다 — .app-modal 을 함께 쓴다.
+
+           내용은 전부 정적 텍스트다. 근거 파일에서 읽지 않고 AI 도 쓰지 않는다.
+           §10 검사기 대상이 아니다 (정보 화면과 같은 취급).
+
+           숫자가 들어가는 문장은 설명용 예시임을 문장에서 드러낸다 —
+           `20~25 정도입니다` · `약 12가 됩니다`. 그날의 값이 아니다.
+           ============================================================ -->
+      <dialog class="app-modal" id="unit-modal" aria-labelledby="unit-modal-title">
+        <div class="app-modal__panel wv-stack wv-gap-5">
+          <p class="wv-subtitle" id="unit-modal-title"></p>
+          <p class="wv-body" id="unit-modal-body"></p>
+          <button type="button" class="wv-btn wv-btn--secondary wv-btn--block" id="unit-modal-close">닫기</button>
+        </div>
+      </dialog>
 
       <!-- ══ 개발용 견본 전환 ═══════════════════════════════════════
            실제 서비스에 나갈 것이 아니다. 시연·확인용이다.
