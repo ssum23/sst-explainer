@@ -40,14 +40,14 @@
 
   "groups": [
     { "id":"heat_input","name":"열유입","display_order":1,
-      "adopted":false,"representative_percentile":71.5,
+      "adopted":false,"representative_percentile":69.2,
       "factors":[
         {"id":"solar","name":"일사량","window":"7일","as_of":null,
-         "value":19.57,"value_raw":19.5686,"unit":"MJ/m²",
-         "percentile":71.5,"clim_sample_size":null,"quality":"ok"},
+         "value":19.15,"value_raw":19.1529,"unit":"MJ/m²",
+         "percentile":69.0,"clim_sample_size":null,"quality":"ok"},
         {"id":"airtemp","name":"기온","window":"7일","as_of":null,
-         "value":31.90,"value_raw":31.9000,"unit":"℃",
-         "percentile":68.6,"clim_sample_size":null,"quality":"ok"}]},
+         "value":31.86,"value_raw":31.8571,"unit":"℃",
+         "percentile":69.2,"clim_sample_size":null,"quality":"ok"}]},
 
     { "id":"background","name":"이전부터 높았던 수온","display_order":2,
       "adopted":null,"representative_percentile":null,
