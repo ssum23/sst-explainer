@@ -1,0 +1,971 @@
+/*!
+ * Waves Design System v1.2.1
+ * 색상·그라디언트·라운딩·그림자 출처: "UI Interface Mobile Waves (Community).fig"
+ * 타이포그래피 출처: 사용자 제공 참고 파일 index.html
+ *
+ * 출처 표기: [F] 원본 Figma 추출 · [D] 파생 · [N] 신규 설계 · [Ref] 참고 파일
+ *
+ * v1.2.1 — .wv-brand 웨이트 500 → 600
+ * v1.2   — 타이포그래피 전체를 참고 파일 기준으로 교체
+ *          (Noto Serif KR / IBM Plex Sans KR / IBM Plex Mono, 최대 웨이트 600)
+ *
+ * 기본 테마는 다크입니다. 라이트는 <html data-theme="light"> 로 전환합니다.
+ *
+ * 폰트 로딩 (HTML <head> 에 CSS 보다 먼저):
+ * <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+ */
+/* ==========================================================================
+   Waves Design System — 01. Tokens
+   --------------------------------------------------------------------------
+   출처 표기 규칙
+     [F] Figma 원본 파일에서 직접 추출한 값. 변경 금지.
+     [D] [F] 값에서 보간·파생한 값.
+     [N] 원본에 존재하지 않아 새로 설계한 값.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Primitive — Blue scale
+   원본의 파랑 11종을 명도순으로 정렬하고 빈 구간만 보간했습니다.
+   -------------------------------------------------------------------------- */
+:root {
+  --wv-blue-50:  #e8f6ff; /* [D] */
+  --wv-blue-100: #c4e9ff; /* [D] */
+  --wv-blue-200: #82cdff; /* [F] light blue, 6회 사용 */
+  --wv-blue-300: #4db6ff; /* [D] */
+  --wv-blue-400: #0499fc; /* [F] button gradient end */
+  --wv-blue-500: #009aff; /* [F] primary, 면적 2위 */
+  --wv-blue-600: #028be7; /* [F] button gradient mid */
+  --wv-blue-700: #007dd1; /* [F] button gradient start */
+  --wv-blue-800: #0065a8; /* [F] steel, card gradient top */
+  --wv-blue-900: #00416c; /* [F] wave mid */
+  --wv-blue-950: #021522; /* [F] deepest */
+
+  /* scale 에 안 들어가는 원본 파랑 (특정 용도 전용) */
+  --wv-blue-mid:    #0768a9; /* [F] 7회 사용 */
+  --wv-blue-navy:   #002d4a; /* [F] 면적 3위, 어두운 배경 */
+  --wv-blue-card-2: #004573; /* [F] card gradient bottom */
+  --wv-blue-shadow: #0364a5; /* [F] 그림자 전용 */
+
+  /* --------------------------------------------------------------------------
+     2. Primitive — Neutral
+     원본에 흰색(#FFFFFF)뿐이라 네이비를 섞은 중립 스케일을 새로 만들었습니다.
+     순수 회색 대신 h≈205 를 유지해 파랑 위에 얹었을 때 튀지 않습니다.
+     -------------------------------------------------------------------------- */
+  --wv-neutral-0:   #ffffff; /* [F] 면적 1위 */
+  --wv-neutral-50:  #f4f8fb; /* [N] */
+  --wv-neutral-100: #e4edf4; /* [N] */
+  --wv-neutral-200: #c9d8e4; /* [N] */
+  --wv-neutral-300: #a3b8c9; /* [N] */
+  --wv-neutral-400: #7a93a8; /* [N] */
+  --wv-neutral-500: #587288; /* [N] */
+  --wv-neutral-600: #3e5568; /* [N] */
+  --wv-neutral-700: #2a3d4d; /* [N] */
+  --wv-neutral-800: #1a2833; /* [N] */
+  --wv-neutral-900: #0e171f; /* [N] */
+
+  /* --------------------------------------------------------------------------
+     3. Primitive — Accent & status
+     골드/오렌지/레드는 원본 값. 초록은 원본에 없어 새로 만들었습니다.
+     -------------------------------------------------------------------------- */
+  --wv-gold-500:   #d3b619; /* [F] */
+  --wv-gold-300:   #f0d95a; /* [D] */
+  --wv-orange-500: #ff8a00; /* [F] */
+  --wv-orange-300: #ffb457; /* [D] */
+  --wv-red-500:    #ff0000; /* [F] 원본 값 — 순색이라 UI 텍스트용으로는 부적합 */
+  --wv-red-400:    #ff3b30; /* [D] 실사용용으로 톤 조정 */
+  --wv-red-300:    #ff8078; /* [D] */
+  --wv-green-500:  #00c48c; /* [N] 파랑 계열과 붙었을 때 조화되는 청록 계열 초록 */
+  --wv-green-300:  #5ee0b6; /* [N] */
+
+  /* --------------------------------------------------------------------------
+     4. Gradient — 이 키트의 정체성
+     중간 스톱이 48.2% / 51.6% 로 비대칭인 것이 원본의 특징입니다. 유지하세요.
+     -------------------------------------------------------------------------- */
+  --wv-grad-screen:    linear-gradient(180deg, #021522 0%, #00416c 51.6%, #0099ff 100%);       /* [F] */
+  --wv-grad-button:    linear-gradient(90deg, #007dd1 0%, #028be7 48.2%, #0499fc 100%);        /* [F] */
+  --wv-grad-card:      linear-gradient(180deg, #0065a8 0%, #004573 100%);                       /* [F] */
+  --wv-grad-highlight: linear-gradient(180deg, #216ba0 0%, #ffffff 100%);                       /* [F] */
+  /* 파생 그라디언트 — 원본 규칙(3-stop, 비대칭 중간값)을 그대로 따랐습니다. */
+  --wv-grad-button-hover:  linear-gradient(90deg, #0089e4 0%, #0d98f5 48.2%, #26a8ff 100%);     /* [D] */
+  --wv-grad-danger:        linear-gradient(90deg, #d32b22 0%, #f03a30 48.2%, #ff5a50 100%);     /* [D] */
+  --wv-grad-success:       linear-gradient(90deg, #009e70 0%, #00b681 48.2%, #00c48c 100%);     /* [N] */
+  --wv-grad-sheen:         linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 60%); /* [N] 유리 표면 광택 */
+
+  /* --------------------------------------------------------------------------
+     5. Radius
+     20px 가 기본 단위(30회). 180px 은 물결을 만드는 전용 값입니다.
+     원본에 없던 4/8/12 는 작은 요소용으로 추가했습니다 — 20px 을 12px 높이 뱃지에
+     쓰면 사실상 pill 이 되어 위계가 무너지기 때문입니다.
+     -------------------------------------------------------------------------- */
+  --wv-radius-xs:   4px;   /* [N] */
+  --wv-radius-sm:   8px;   /* [N] */
+  --wv-radius-md:   12px;  /* [N] */
+  --wv-radius:      20px;  /* [F] 기본 단위 — 버튼·칩·카드 */
+  --wv-radius-lg:   30px;  /* [F] 큰 카드 */
+  --wv-radius-pill: 50px;  /* [F] */
+  --wv-radius-wave: 180px; /* [F] 물결 전용 — 화면 폭보다 넓은 사각형에만 적용 */
+  --wv-radius-full: 9999px;
+
+  /* --------------------------------------------------------------------------
+     6. Elevation
+     y 오프셋 50~60px, blur 200~300px 은 일반 UI 대비 매우 큽니다.
+     이 과장이 "떠 있는" 룩의 핵심이므로 축소하지 마세요.
+     -------------------------------------------------------------------------- */
+  --wv-shadow-xs:    0 4px 4px rgba(0, 0, 0, .25);              /* [F] */
+  --wv-shadow-sm:    0 5px 4px rgba(0, 0, 0, .57);              /* [F] */
+  --wv-shadow-lg:    0 50px 30px -15px rgba(0, 0, 0, .15);      /* [F] 주력 그림자, 6회 */
+  --wv-shadow-side:  -80px 60px 80px rgba(0, 0, 0, .15);        /* [F] */
+  --wv-shadow-inset: inset 0 -12px 4px rgba(0, 0, 0, .03);      /* [F] */
+  --wv-shadow-glow:  0 12px 32px -8px rgba(0, 154, 255, .55);   /* [N] primary 요소 강조용 */
+  --wv-shadow-focus: 0 0 0 3px rgba(130, 205, 255, .55);        /* [N] 키보드 포커스 링 */
+
+  --wv-blur-sm:  30px;  /* [F] */
+  --wv-blur-lg:  200px; /* [F] */
+  --wv-blur-xl:  300px; /* [F] */
+  --wv-blur-glass: 20px; /* [N] backdrop-filter 용 */
+
+  /* --------------------------------------------------------------------------
+     7. Typography
+     원본 Figma 는 Reenie Beanie(손글씨) 50px 텍스트 2개가 전부였고, 사용하지 않습니다. [F]
+     폰트 스택은 사용자가 제공한 참고 파일(index.html)에서 그대로 가져왔습니다. [Ref]
+
+     참고 파일의 구성 — 디스플레이는 세리프, 본문은 산세리프, 수치는 모노.
+     세 패밀리 모두 한글 글리프를 포함하므로 국문/영문이 한 줄에 섞여도 자형이 튀지 않습니다.
+     (직전 버전의 Clash Display 는 한글이 없어 폴백이 발생했습니다.)
+
+     로딩 — HTML <head> 에 아래 한 줄:
+     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+     -------------------------------------------------------------------------- */
+  --wv-font-display: "Noto Serif KR", serif;                       /* [Ref] */
+  --wv-font-body:    "IBM Plex Sans KR", system-ui, sans-serif;    /* [Ref] */
+  --wv-font-mono:    "IBM Plex Mono", monospace;                   /* [Ref] */
+  /* 이전 값 보존:
+     --wv-font-display: "Clash Display", …   [N]  v1.1
+     --wv-font-display: "Reenie Beanie", …   [F]  원본 Figma */
+
+  /* 1.20 비율 (모바일 우선이라 1.25 보다 완만하게) */
+  --wv-text-2xs: 11px; /* [N] */
+  --wv-text-xs:  12px; /* [N] */
+  --wv-text-sm:  14px; /* [N] */
+  --wv-text-md:  16px; /* [N] 본문 기준 */
+  --wv-text-lg:  19px; /* [N] */
+  --wv-text-xl:  23px; /* [N] */
+  --wv-text-2xl: 28px; /* [N] */
+  --wv-text-3xl: 34px; /* [N] */
+  --wv-text-4xl: 41px; /* [N] */
+  --wv-text-5xl: 50px; /* [F] 원본 타이틀 크기와 일치 */
+
+  --wv-leading-tight:   1.15; /* [N] */
+  --wv-leading-snug:    1.35; /* [N] */
+  --wv-leading-normal:  1.7;  /* [Ref] 참고 파일 본문 행간. 국문 조판 기준 */
+  --wv-leading-relaxed: 1.9;  /* [D] */
+
+  --wv-tracking-tight:  -0.02em; /* [Ref] 참고 파일 히어로(64px) 자간과 동일 */
+  --wv-tracking-normal: 0;       /* [N] */
+  --wv-tracking-wide:   0.08em;  /* [N] 소문자 라벨용 */
+
+  /* 참고 파일이 로드하는 웨이트는 400/500/600 뿐입니다. 700 을 쓰면 브라우저가
+     합성 볼드를 만들어 자형이 뭉개지므로, 최대 웨이트를 600 으로 낮췄습니다. [Ref] */
+  --wv-weight-regular:  400; /* [Ref] */
+  --wv-weight-medium:   500; /* [Ref] 참고 파일의 주력 웨이트 */
+  --wv-weight-semibold: 600; /* [Ref] */
+  --wv-weight-bold:     600; /* [Ref] 700 아님 — 위 주석 참고 */
+
+  /* --------------------------------------------------------------------------
+     8. Space — 4px 기준. 20px(=radius 기본값) 이 리듬의 중심입니다.
+     -------------------------------------------------------------------------- */
+  --wv-space-0:  0;     /* [N] */
+  --wv-space-1:  4px;   /* [N] */
+  --wv-space-2:  8px;   /* [N] */
+  --wv-space-3:  12px;  /* [N] */
+  --wv-space-4:  16px;  /* [N] */
+  --wv-space-5:  20px;  /* [N] radius 기본값과 동일 — 컨테이너 패딩 기본 */
+  --wv-space-6:  24px;  /* [N] */
+  --wv-space-8:  32px;  /* [N] */
+  --wv-space-10: 40px;  /* [N] */
+  --wv-space-12: 48px;  /* [N] */
+  --wv-space-16: 64px;  /* [N] */
+  --wv-space-20: 80px;  /* [N] */
+  --wv-space-24: 96px;  /* [N] */
+
+  /* 컴포넌트 높이 — 모바일 터치 타깃 44px 기준 */
+  --wv-control-sm: 36px; /* [N] */
+  --wv-control-md: 44px; /* [N] */
+  --wv-control-lg: 56px; /* [N] */
+
+  /* --------------------------------------------------------------------------
+     9. Motion — 원본에 없음. 물결의 관성을 흉내낸 커브를 기본값으로 씁니다.
+     -------------------------------------------------------------------------- */
+  --wv-duration-fast: 120ms;                        /* [N] */
+  --wv-duration-base: 220ms;                        /* [N] */
+  --wv-duration-slow: 420ms;                        /* [N] */
+  --wv-ease-out:  cubic-bezier(.22, .61, .36, 1);   /* [N] 기본 */
+  --wv-ease-in:   cubic-bezier(.55, .06, .68, .19); /* [N] */
+  --wv-ease-wave: cubic-bezier(.65, 0, .35, 1);     /* [N] 물결 애니메이션용 */
+
+  /* 10. Layer */
+  --wv-z-base:    0;    /* [N] */
+  --wv-z-wave:    1;    /* [N] */
+  --wv-z-content: 10;   /* [N] */
+  --wv-z-sticky:  100;  /* [N] */
+  --wv-z-nav:     200;  /* [N] */
+  --wv-z-overlay: 900;  /* [N] */
+  --wv-z-modal:   1000; /* [N] */
+  --wv-z-toast:   1100; /* [N] */
+
+  /* 11. Breakpoint (참고용 — @media 에는 리터럴로 직접 씁니다) */
+  --wv-bp-sm: 414px;  /* [F] iPhone 11 Pro Max = 원본 기준 화면 */
+  --wv-bp-md: 768px;  /* [N] */
+  --wv-bp-lg: 1024px; /* [N] */
+}
+
+/* ==========================================================================
+   12. Semantic layer
+   원본 화면이 전부 어두운 그라디언트이므로 **다크가 기본 테마**입니다.
+   라이트는 파생 테마입니다. 컴포넌트는 이 시맨틱 토큰만 참조하세요.
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --wv-bg:            var(--wv-blue-950);
+  --wv-bg-gradient:   var(--wv-grad-screen);
+  --wv-surface:       rgba(255, 255, 255, .07);
+  --wv-surface-raised: rgba(255, 255, 255, .12);
+  --wv-surface-solid: var(--wv-blue-navy);
+  --wv-surface-card:  var(--wv-grad-card);
+
+  --wv-text:          var(--wv-neutral-0);
+  --wv-text-muted:    rgba(255, 255, 255, .68);
+  --wv-text-subtle:   rgba(255, 255, 255, .45);
+  --wv-text-inverse:  var(--wv-blue-950);
+  --wv-text-on-accent: var(--wv-neutral-0);
+
+  --wv-border:        rgba(255, 255, 255, .16);
+  --wv-border-strong: rgba(255, 255, 255, .32);
+
+  --wv-accent:        var(--wv-blue-500);
+  --wv-accent-hover:  var(--wv-blue-400);
+  --wv-accent-soft:   rgba(0, 154, 255, .18);
+
+  --wv-success:       var(--wv-green-500);
+  --wv-success-soft:  rgba(0, 196, 140, .18);
+  --wv-warning:       var(--wv-orange-500);
+  --wv-warning-soft:  rgba(255, 138, 0, .18);
+  --wv-danger:        var(--wv-red-400);
+  --wv-danger-soft:   rgba(255, 59, 48, .18);
+  --wv-info:          var(--wv-blue-200);
+  --wv-info-soft:     rgba(130, 205, 255, .18);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --wv-bg:            var(--wv-neutral-50);
+  --wv-bg-gradient:   linear-gradient(180deg, #ffffff 0%, #e8f6ff 51.6%, #c4e9ff 100%); /* [D] 원본 스톱 비율 유지 */
+  --wv-surface:       var(--wv-neutral-0);
+  --wv-surface-raised: var(--wv-neutral-0);
+  --wv-surface-solid: var(--wv-neutral-0);
+  --wv-surface-card:  linear-gradient(180deg, #ffffff 0%, #eef6fd 100%);
+
+  --wv-text:          var(--wv-neutral-900);
+  --wv-text-muted:    var(--wv-neutral-600);
+  --wv-text-subtle:   var(--wv-neutral-400);
+  --wv-text-inverse:  var(--wv-neutral-0);
+  --wv-text-on-accent: var(--wv-neutral-0);
+
+  --wv-border:        var(--wv-neutral-200);
+  --wv-border-strong: var(--wv-neutral-300);
+
+  --wv-accent:        var(--wv-blue-700);
+  --wv-accent-hover:  var(--wv-blue-600);
+  --wv-accent-soft:   rgba(0, 125, 209, .12);
+
+  --wv-success:       #00996d;
+  --wv-success-soft:  rgba(0, 153, 109, .12);
+  --wv-warning:       #c26a00;
+  --wv-warning-soft:  rgba(255, 138, 0, .14);
+  --wv-danger:        #d92c20;
+  --wv-danger-soft:   rgba(217, 44, 32, .12);
+  --wv-info:          var(--wv-blue-800);
+  --wv-info-soft:     rgba(0, 101, 168, .12);
+
+  /* 라이트 테마에서는 원본의 초대형 그림자가 지저분해 보여 강도를 낮춥니다. */
+  --wv-shadow-lg:   0 30px 40px -20px rgba(2, 21, 34, .22);
+  --wv-shadow-side: -40px 40px 60px rgba(2, 21, 34, .10);
+}
+/* ==========================================================================
+   Waves Design System — 02. Base
+   ========================================================================== */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--wv-bg);
+  color: var(--wv-text);
+  font-family: var(--wv-font-body);
+  font-size: var(--wv-text-md);
+  line-height: var(--wv-leading-normal);
+  font-variant-numeric: tabular-nums; /* [Ref] 숫자 열이 흔들리지 않도록 */
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, p, figure { margin: 0; }
+
+h1, h2, h3, h4 {
+  font-weight: var(--wv-weight-medium);
+  line-height: var(--wv-leading-tight);
+  letter-spacing: var(--wv-tracking-tight);
+}
+
+h1 { font-size: var(--wv-text-3xl); font-family: var(--wv-font-display); font-weight: var(--wv-weight-semibold); letter-spacing: var(--wv-tracking-tight); }
+h2 { font-size: var(--wv-text-2xl); font-family: var(--wv-font-display); }
+h3 { font-size: var(--wv-text-xl); }
+h4 { font-size: var(--wv-text-lg); letter-spacing: var(--wv-tracking-normal); }
+
+a {
+  color: var(--wv-accent);
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+img, svg, video { display: block; max-width: 100%; }
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--wv-shadow-focus);
+  border-radius: var(--wv-radius-sm);
+}
+
+::selection {
+  background: var(--wv-accent);
+  color: var(--wv-neutral-0);
+}
+
+/* --------------------------------------------------------------------------
+   Type roles — 참고 파일(index.html)의 세리프 디스플레이 + 산세리프 본문 구성
+   디스플레이(세리프)는 19px 이상에서만 씁니다. 그 아래에서는 세리프의 획 대비가
+   화면에서 뭉개지므로 전부 본문체를 씁니다.
+   -------------------------------------------------------------------------- */
+.wv-brand {
+  font-family: var(--wv-font-display);
+  font-size: var(--wv-text-5xl);
+  font-weight: var(--wv-weight-semibold); /* 워드마크만 600 — 본문 세리프보다 한 단계 무겁게 */
+  line-height: 1;
+  letter-spacing: var(--wv-tracking-tight); /* [Ref] 참고 파일 .hero 와 동일 */
+}
+
+.wv-display {
+  font-family: var(--wv-font-display);
+  font-size: var(--wv-text-4xl);
+  font-weight: var(--wv-weight-medium);
+  line-height: var(--wv-leading-tight);
+  letter-spacing: var(--wv-tracking-tight);
+}
+.wv-title {
+  font-family: var(--wv-font-display);
+  font-size: var(--wv-text-2xl);
+  font-weight: var(--wv-weight-semibold);
+  line-height: var(--wv-leading-snug);
+  letter-spacing: var(--wv-tracking-tight);
+}
+.wv-subtitle { font-family: var(--wv-font-display); font-size: var(--wv-text-lg); font-weight: var(--wv-weight-medium); line-height: var(--wv-leading-snug); }
+.wv-body     { font-size: var(--wv-text-md);  font-weight: var(--wv-weight-regular);  line-height: var(--wv-leading-normal); }
+.wv-caption  { font-size: var(--wv-text-sm);  font-weight: var(--wv-weight-regular);  line-height: var(--wv-leading-normal); color: var(--wv-text-muted); }
+.wv-overline {
+  font-size: var(--wv-text-xs);
+  font-weight: var(--wv-weight-semibold);
+  letter-spacing: var(--wv-tracking-wide);
+  text-transform: uppercase;
+  color: var(--wv-text-subtle);
+}
+.wv-mono { font-family: var(--wv-font-mono); font-size: var(--wv-text-sm); font-variant-numeric: tabular-nums; }
+
+.wv-text-muted  { color: var(--wv-text-muted); }
+.wv-text-subtle { color: var(--wv-text-subtle); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* ==========================================================================
+   Waves Design System — 03. Components
+   모든 컴포넌트는 시맨틱 토큰만 참조합니다. 프리미티브 직접 참조 금지.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Screen — 원본의 화면 배경 그라디언트를 담는 최상위 컨테이너
+   -------------------------------------------------------------------------- */
+.wv-screen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 100%;
+  background: var(--wv-bg-gradient);
+  color: var(--wv-text);
+}
+
+.wv-screen__body {
+  position: relative;
+  z-index: var(--wv-z-content);
+  padding: var(--wv-space-5);
+}
+
+/* --------------------------------------------------------------------------
+   Wave — 시그니처 요소
+   원본 기법: 화면 폭보다 넓은 사각형에 180px 라운딩을 걸어 곡선을 만든다.
+   그래서 width 가 100% 를 넘어야 하고, 넘지 않으면 그냥 둥근 상자가 됩니다.
+   -------------------------------------------------------------------------- */
+.wv-waves {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 340px;
+  z-index: var(--wv-z-wave);
+  pointer-events: none;
+}
+
+.wv-wave {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 340px;
+  border-radius: var(--wv-radius-wave) var(--wv-radius-wave) 0 0;
+  background: var(--wv-accent);
+  will-change: transform;
+}
+
+/* 층위별 오프셋 — 겹칠수록 깊이가 생깁니다. */
+.wv-wave--1 { bottom: 0;    background: color-mix(in srgb, var(--wv-blue-900) 85%, transparent); }
+.wv-wave--2 { bottom: -36px; left: -38%; width: 176%; background: color-mix(in srgb, var(--wv-blue-700) 75%, transparent); }
+.wv-wave--3 { bottom: -80px; left: -22%; width: 144%; background: var(--wv-blue-500); box-shadow: var(--wv-shadow-lg); }
+
+.wv-wave--top {
+  border-radius: 0 0 var(--wv-radius-wave) var(--wv-radius-wave);
+  top: 0;
+  bottom: auto;
+}
+
+.wv-waves--top { top: 0; bottom: auto; }
+
+/* 완만한 부유 애니메이션. prefers-reduced-motion 에서 자동으로 멈춥니다. */
+.wv-waves--animated .wv-wave { animation: wv-float 9s var(--wv-ease-wave) infinite alternate; }
+.wv-waves--animated .wv-wave--2 { animation-duration: 11s; animation-delay: -2s; }
+.wv-waves--animated .wv-wave--3 { animation-duration: 13s; animation-delay: -4s; }
+
+@keyframes wv-float {
+  from { transform: translate3d(-2%, 0, 0) rotate(-.6deg); }
+  to   { transform: translate3d(2%, -10px, 0) rotate(.6deg); }
+}
+
+/* 배경 글로우 — 원본의 FOREGROUND_BLUR 200~300px 을 재현한 것 */
+.wv-glow {
+  position: absolute;
+  z-index: var(--wv-z-base);
+  width: 320px;
+  height: 320px;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-accent);
+  filter: blur(var(--wv-blur-lg));
+  opacity: .55;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Button
+   -------------------------------------------------------------------------- */
+.wv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wv-space-2);
+  height: var(--wv-control-md);
+  padding-inline: var(--wv-space-6);
+  border: 0;
+  border-radius: var(--wv-radius);
+  background: var(--wv-surface);
+  color: var(--wv-text);
+  font-size: var(--wv-text-md);
+  font-weight: var(--wv-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform var(--wv-duration-fast) var(--wv-ease-out),
+    filter var(--wv-duration-base) var(--wv-ease-out),
+    background-color var(--wv-duration-base) var(--wv-ease-out),
+    box-shadow var(--wv-duration-base) var(--wv-ease-out);
+}
+
+.wv-btn:active { transform: translateY(1px) scale(.985); }
+
+.wv-btn[disabled],
+.wv-btn[aria-disabled="true"] {
+  opacity: .45;
+  pointer-events: none;
+}
+
+.wv-btn--primary {
+  background: var(--wv-grad-button);
+  color: var(--wv-text-on-accent);
+  box-shadow: var(--wv-shadow-glow);
+}
+.wv-btn--primary:hover { background: var(--wv-grad-button-hover); }
+
+.wv-btn--danger {
+  background: var(--wv-grad-danger);
+  color: var(--wv-neutral-0);
+}
+
+.wv-btn--success {
+  background: var(--wv-grad-success);
+  color: var(--wv-neutral-0);
+}
+
+.wv-btn--secondary {
+  background: transparent;
+  border: 1px solid var(--wv-border-strong);
+  color: var(--wv-text);
+}
+.wv-btn--secondary:hover { background: var(--wv-surface); }
+
+.wv-btn--ghost {
+  background: transparent;
+  color: var(--wv-text-muted);
+  padding-inline: var(--wv-space-3);
+}
+.wv-btn--ghost:hover { color: var(--wv-text); background: var(--wv-surface); }
+
+.wv-btn--sm { height: var(--wv-control-sm); padding-inline: var(--wv-space-4); font-size: var(--wv-text-sm); border-radius: var(--wv-radius-md); }
+.wv-btn--lg { height: var(--wv-control-lg); padding-inline: var(--wv-space-8); font-size: var(--wv-text-lg); }
+.wv-btn--pill { border-radius: var(--wv-radius-pill); }
+.wv-btn--block { display: flex; width: 100%; }
+
+.wv-btn--icon {
+  width: var(--wv-control-md);
+  padding-inline: 0;
+  border-radius: var(--wv-radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   Card
+   -------------------------------------------------------------------------- */
+.wv-card {
+  position: relative;
+  padding: var(--wv-space-5);
+  border-radius: var(--wv-radius-lg);
+  background: var(--wv-surface-card);
+  box-shadow: var(--wv-shadow-lg);
+  overflow: hidden;
+}
+
+/* 원본의 하이라이트 그라디언트를 상단 광택으로 재사용 */
+.wv-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 60%;
+  background: var(--wv-grad-sheen);
+  pointer-events: none;
+}
+
+/* 광택은 절대 위치라 정적 자식보다 위에 그려집니다. 내용을 다시 끌어올립니다. */
+.wv-card > * { position: relative; z-index: 1; }
+
+.wv-card--glass {
+  background: var(--wv-surface);
+  border: 1px solid var(--wv-border);
+  backdrop-filter: blur(var(--wv-blur-glass));
+  -webkit-backdrop-filter: blur(var(--wv-blur-glass));
+  box-shadow: var(--wv-shadow-inset);
+}
+
+.wv-card--flat {
+  background: var(--wv-surface-solid);
+  box-shadow: none;
+  border: 1px solid var(--wv-border);
+}
+
+.wv-card--float { box-shadow: var(--wv-shadow-lg), var(--wv-shadow-side); }
+
+.wv-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wv-space-3);
+  margin-bottom: var(--wv-space-4);
+}
+
+.wv-card__footer {
+  display: flex;
+  gap: var(--wv-space-2);
+  margin-top: var(--wv-space-5);
+}
+
+/* --------------------------------------------------------------------------
+   Chip & Badge
+   -------------------------------------------------------------------------- */
+.wv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+  height: 32px;
+  padding-inline: var(--wv-space-4);
+  border: 1px solid var(--wv-border);
+  border-radius: var(--wv-radius-pill);
+  background: var(--wv-surface);
+  color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
+  font-weight: var(--wv-weight-medium);
+  cursor: pointer;
+  transition: all var(--wv-duration-fast) var(--wv-ease-out);
+}
+.wv-chip:hover { color: var(--wv-text); border-color: var(--wv-border-strong); }
+.wv-chip[aria-pressed="true"],
+.wv-chip--active {
+  background: var(--wv-grad-button);
+  border-color: transparent;
+  color: var(--wv-text-on-accent);
+}
+
+.wv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--wv-space-2);
+  border-radius: var(--wv-radius-xs);
+  background: var(--wv-accent-soft);
+  color: var(--wv-accent);
+  font-size: var(--wv-text-xs);
+  font-weight: var(--wv-weight-semibold);
+  line-height: 1.4;
+}
+.wv-badge--success { background: var(--wv-success-soft); color: var(--wv-success); }
+.wv-badge--warning { background: var(--wv-warning-soft); color: var(--wv-warning); }
+.wv-badge--danger  { background: var(--wv-danger-soft);  color: var(--wv-danger); }
+.wv-badge--neutral { background: var(--wv-surface);      color: var(--wv-text-muted); }
+
+.wv-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--wv-radius-full);
+  background: currentColor;
+  flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   Form
+   -------------------------------------------------------------------------- */
+.wv-field { display: flex; flex-direction: column; gap: var(--wv-space-2); }
+
+.wv-label {
+  font-size: var(--wv-text-sm);
+  font-weight: var(--wv-weight-medium);
+  color: var(--wv-text-muted);
+}
+
+.wv-input,
+.wv-textarea,
+.wv-select {
+  width: 100%;
+  min-height: var(--wv-control-md);
+  padding: var(--wv-space-3) var(--wv-space-4);
+  border: 1px solid var(--wv-border);
+  border-radius: var(--wv-radius-md);
+  background: var(--wv-surface);
+  color: var(--wv-text);
+  font-size: var(--wv-text-md);
+  transition: border-color var(--wv-duration-base) var(--wv-ease-out),
+              background-color var(--wv-duration-base) var(--wv-ease-out);
+}
+
+.wv-input::placeholder,
+.wv-textarea::placeholder { color: var(--wv-text-subtle); }
+
+.wv-input:hover,
+.wv-textarea:hover,
+.wv-select:hover { border-color: var(--wv-border-strong); }
+
+.wv-input:focus,
+.wv-textarea:focus,
+.wv-select:focus {
+  border-color: var(--wv-accent);
+  background: var(--wv-surface-raised);
+}
+
+.wv-textarea { min-height: 96px; resize: vertical; }
+
+.wv-field--invalid .wv-input,
+.wv-field--invalid .wv-textarea { border-color: var(--wv-danger); }
+
+.wv-help { font-size: var(--wv-text-xs); color: var(--wv-text-subtle); }
+.wv-field--invalid .wv-help { color: var(--wv-danger); }
+
+/* Switch */
+.wv-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 52px;
+  height: 30px;
+  flex: none;
+  cursor: pointer;
+}
+.wv-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.wv-switch__track {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--wv-radius-pill);
+  background: var(--wv-surface-raised);
+  border: 1px solid var(--wv-border);
+  transition: background var(--wv-duration-base) var(--wv-ease-out);
+}
+.wv-switch__thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-neutral-0);
+  box-shadow: var(--wv-shadow-xs);
+  transition: transform var(--wv-duration-base) var(--wv-ease-out);
+}
+.wv-switch input:checked ~ .wv-switch__track { background: var(--wv-grad-button); border-color: transparent; }
+.wv-switch input:checked ~ .wv-switch__thumb { transform: translateX(22px); }
+.wv-switch input:focus-visible ~ .wv-switch__track { box-shadow: var(--wv-shadow-focus); }
+
+/* --------------------------------------------------------------------------
+   List
+   -------------------------------------------------------------------------- */
+.wv-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wv-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-4);
+  padding: var(--wv-space-3) var(--wv-space-4);
+  border-radius: var(--wv-radius);
+  background: var(--wv-surface);
+  transition: background var(--wv-duration-fast) var(--wv-ease-out);
+}
+.wv-list-item:hover { background: var(--wv-surface-raised); }
+
+.wv-list-item__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wv-list-item__title {
+  display: block;
+  font-size: var(--wv-text-md);
+  font-weight: var(--wv-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wv-list-item__meta { display: block; font-size: var(--wv-text-sm); color: var(--wv-text-subtle); }
+
+.wv-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-grad-button);
+  color: var(--wv-text-on-accent);
+  font-size: var(--wv-text-sm);
+  font-weight: var(--wv-weight-semibold);
+  box-shadow: var(--wv-shadow-xs);
+}
+.wv-avatar--sm { width: 32px; height: 32px; font-size: var(--wv-text-xs); }
+.wv-avatar--lg { width: 64px; height: 64px; font-size: var(--wv-text-lg); }
+
+/* --------------------------------------------------------------------------
+   Progress
+   -------------------------------------------------------------------------- */
+.wv-progress {
+  height: 8px;
+  border-radius: var(--wv-radius-pill);
+  background: var(--wv-surface-raised);
+  overflow: hidden;
+}
+.wv-progress__bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wv-grad-button);
+  transition: width var(--wv-duration-slow) var(--wv-ease-out);
+}
+
+/* --------------------------------------------------------------------------
+   App bar & Tab bar
+   -------------------------------------------------------------------------- */
+.wv-appbar {
+  position: relative;
+  z-index: var(--wv-z-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wv-space-3);
+  min-height: var(--wv-control-lg);
+  padding: var(--wv-space-3) var(--wv-space-5);
+}
+.wv-appbar__title {
+  font-size: var(--wv-text-lg);
+  font-weight: var(--wv-weight-semibold);
+}
+
+.wv-tabbar {
+  position: relative;
+  z-index: var(--wv-z-nav);
+  display: flex;
+  gap: var(--wv-space-1);
+  padding: var(--wv-space-2);
+  border-radius: var(--wv-radius-lg);
+  background: var(--wv-surface);
+  border: 1px solid var(--wv-border);
+  backdrop-filter: blur(var(--wv-blur-glass));
+  -webkit-backdrop-filter: blur(var(--wv-blur-glass));
+}
+.wv-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--wv-space-2);
+  border: 0;
+  border-radius: var(--wv-radius-md);
+  background: transparent;
+  color: var(--wv-text-subtle);
+  font-size: var(--wv-text-2xs);
+  font-weight: var(--wv-weight-medium);
+  cursor: pointer;
+  transition: color var(--wv-duration-fast) var(--wv-ease-out),
+              background var(--wv-duration-fast) var(--wv-ease-out);
+}
+.wv-tab[aria-selected="true"] { color: var(--wv-text); background: var(--wv-accent-soft); }
+
+/* --------------------------------------------------------------------------
+   Sheet — 하단 시트. 상단 모서리에 wave radius 를 절반만 적용해
+   물결 언어를 UI 구조로 옮긴 컴포넌트입니다.
+   -------------------------------------------------------------------------- */
+.wv-sheet {
+  position: relative;
+  padding: var(--wv-space-6) var(--wv-space-5) var(--wv-space-8);
+  border-radius: 90px 90px 0 0;
+  background: var(--wv-surface-solid);
+  box-shadow: var(--wv-shadow-lg);
+}
+.wv-sheet__handle {
+  width: 44px;
+  height: 4px;
+  margin: 0 auto var(--wv-space-5);
+  border-radius: var(--wv-radius-pill);
+  background: var(--wv-border-strong);
+}
+
+/* --------------------------------------------------------------------------
+   Divider & Alert
+   -------------------------------------------------------------------------- */
+.wv-divider {
+  height: 1px;
+  border: 0;
+  margin: var(--wv-space-5) 0;
+  background: var(--wv-border);
+}
+
+.wv-alert {
+  display: flex;
+  gap: var(--wv-space-3);
+  padding: var(--wv-space-4);
+  border-radius: var(--wv-radius);
+  background: var(--wv-info-soft);
+  border-left: 3px solid var(--wv-info);
+  font-size: var(--wv-text-sm);
+}
+.wv-alert--success { background: var(--wv-success-soft); border-color: var(--wv-success); }
+.wv-alert--warning { background: var(--wv-warning-soft); border-color: var(--wv-warning); }
+.wv-alert--danger  { background: var(--wv-danger-soft);  border-color: var(--wv-danger); }
+/* ==========================================================================
+   Waves Design System — 04. Utilities
+   ========================================================================== */
+
+.wv-stack  { display: flex; flex-direction: column; }
+.wv-row    { display: flex; align-items: center; }
+.wv-wrap   { flex-wrap: wrap; }
+.wv-center { align-items: center; justify-content: center; }
+.wv-between { justify-content: space-between; }
+.wv-grow   { flex: 1; min-width: 0; }
+
+.wv-gap-1 { gap: var(--wv-space-1); }
+.wv-gap-2 { gap: var(--wv-space-2); }
+.wv-gap-3 { gap: var(--wv-space-3); }
+.wv-gap-4 { gap: var(--wv-space-4); }
+.wv-gap-5 { gap: var(--wv-space-5); }
+.wv-gap-6 { gap: var(--wv-space-6); }
+.wv-gap-8 { gap: var(--wv-space-8); }
+
+.wv-glass {
+  background: var(--wv-surface);
+  border: 1px solid var(--wv-border);
+  backdrop-filter: blur(var(--wv-blur-glass));
+  -webkit-backdrop-filter: blur(var(--wv-blur-glass));
+}
+
+.wv-elevate      { box-shadow: var(--wv-shadow-lg); }
+.wv-elevate-side { box-shadow: var(--wv-shadow-side); }
+.wv-inset        { box-shadow: var(--wv-shadow-inset); }
+
+.wv-rounded      { border-radius: var(--wv-radius); }
+.wv-rounded-lg   { border-radius: var(--wv-radius-lg); }
+.wv-rounded-pill { border-radius: var(--wv-radius-pill); }
+
+.wv-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 모바일 우선. 원본 기준 화면은 414px(iPhone 11 Pro Max)입니다. */
+.wv-container {
+  width: 100%;
+  max-width: 414px;
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .wv-container { max-width: 720px; }
+}
+@media (min-width: 1024px) {
+  .wv-container { max-width: 960px; }
+}

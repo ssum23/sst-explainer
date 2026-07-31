@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>충남 서해 연안 관측점</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="waves-design-system.css">
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/geo.js" defer></script>
+<script src="assets/map.js" defer></script>
+</head>
+<body>
+
+<div class="wv-screen">
+
+  <div class="wv-container">
+
+    <!-- ══ 머리 영역 ═══════════════════════════════════════════════
+         제목부터 「설명 보기 →」까지를 한 배경으로 묶는다.
+         여기까지가 "고르는 곳"이고, 아래(캡션·범례·접힌 목록)는 부연이다.
+         배경 하나로 그 경계를 말한다.
+         ============================================================ -->
+    <div class="app-hero wv-stack wv-gap-4">
+
+      <header class="wv-appbar">
+        <h1 class="wv-appbar__title">충남 서해 연안 관측점</h1>
+        <a class="wv-btn wv-btn--ghost wv-btn--sm" href="info.html">ⓘ 특보란?</a>
+      </header>
+
+      <p class="wv-body">점을 누르면 설명을 볼 수 있습니다</p>
+
+      <!-- ── 개념도 ────────────────────────────────────────────────
+           bbox 와 위경도→픽셀 변환은 assets/geo.js 에 있다. 여기 적지 않는다.
+           viewBox 는 그 bbox 의 실거리 비율(84.96 × 88.91 km = 0.956:1)에서
+           나온 350 × 366 이다. 가로·세로가 같은 축척(약 4.12 px/km)이라
+           지점 사이의 거리는 실제 비율이다.
+           화면에서 그려지는 폭도 350px 이므로 배율은 1.0 이다.
+
+           범위를 충남 서해안 전체로 넓혔다. 천수만만 담으면 축척이 커서
+           여기가 어디쯤인지 알 수 없다 — 태안반도와 가로림만이 함께 보여야
+           천수만이 어디인지 읽힌다. 지곡도 이 범위 안으로 들어왔다.
+
+           해안선은 다르다. 손으로 뭉뚱그린 곡선이다.
+           세밀하게 그리면 확인하지 않은 지형을 사실처럼 주장하게 되므로
+           태안반도·안면도·두 만·육지의 위치 관계만 알아볼 정도로만 그린다.
+           캡션이 이 둘(거리는 실제 비율 / 해안선은 실제 모양 아님)을 갈라 말한다.
+
+           3주차에 배경지도로 교체할 때 이 <path> 두 개만 이미지로 바꾸면 된다.
+           점의 좌표는 같은 bbox 를 쓰므로 다시 찍지 않는다. (PRD §5)
+           ------------------------------------------------------------ -->
+      <figure class="app-schematic">
+        <svg viewBox="0 0 350 366" role="img"
+             aria-label="충남 서해 연안 개념도. 서쪽으로 태안반도가 튀어나와 있고, 그 북쪽에 가로림만, 남서쪽에 남북으로 긴 안면도가 있습니다. 안면도와 동쪽 육지 사이가 천수만입니다. 관측점은 북에서 남으로 서산 지곡(가로림만), 서산 창리, 태안 안면도, 태안 내포, 태안 고남, 보령 삽시도입니다. 설명을 제공하는 지점은 서산 창리 하나입니다.">
+          <title>충남 서해 연안 관측점 개념도</title>
+
+          <!-- ── 육지 ────────────────────────────────────────────
+               서쪽으로 튀어나온 태안반도 → 북쪽에서 가로림만이 파고듦 →
+               동쪽 서산·홍성 내륙 → 남쪽에서 천수만이 파고듦.
+               곡선 열다섯 개 남짓이다. 그 이상 그리지 않는다.
+               ---------------------------------------------------- -->
+          <path class="app-land" d="
+            M 60 100
+            C 66 80, 82 62, 100 52
+            C 108 44, 120 26, 128 8
+            C 134 24, 144 40, 158 52
+            C 172 44, 184 28, 190 10
+            C 196 4, 204 0, 212 0
+            L 350 0
+            L 350 366
+            L 240 366
+            C 228 340, 218 314, 210 290
+            C 204 262, 200 230, 198 200
+            C 196 174, 192 148, 186 132
+            C 176 124, 164 122, 156 126
+            C 150 138, 148 152, 146 168
+            C 138 158, 130 146, 124 136
+            C 108 122, 88 112, 70 106
+            C 64 104, 60 103, 60 100
+            Z"></path>
+
+          <!-- 안면도 — 남서쪽에 남북으로 긴 섬 -->
+          <path class="app-land" d="
+            M 144 180
+            C 150 192, 148 208, 144 224
+            C 140 240, 134 250, 130 258
+            C 126 262, 124 260, 123 254
+            C 124 238, 128 218, 132 198
+            C 136 186, 140 182, 144 180
+            Z"></path>
+
+          <!-- 해역명. 지곡이 창리와 다른 만에 있다는 것을 이 두 라벨이 말한다.
+               둘 다 가로로 적고 지시선으로 해당 해역과 잇는다 —
+               만의 폭이 45~49px 이라 이름이 만 안에 들어가지 않는다.
+
+               가로림만 지시선은 태안 이원면 팔(arm)의 북쪽 끝(128,8)을 돌아간다.
+               곧게 그으면 육지를 가로질러 해안선의 일부처럼 보인다.
+
+               여기에는 `(확인 중)`을 붙이지 않는다 — 확인 대상은 만의 위치가 아니라
+               "각 관측점이 어느 해역에 속하는가"다. 그 단서는 목록과 아래 캡션에 있다. -->
+          <text class="app-sea-label" x="10" y="14">가로림만 해역</text>
+          <polyline class="app-schematic__leader" points="108,12 124,4 150,20"></polyline>
+
+          <text class="app-sea-label" x="132" y="310">천수만 해역</text>
+          <line class="app-schematic__leader" x1="172" y1="298" x2="172" y2="262"></line>
+
+          <!-- 방위 — 축척 막대 옆 왼쪽 아래.
+               전에는 왼쪽 위(10,24)에 있었는데 가로림만 라벨과 겹쳤다. -->
+          <text class="app-schematic__axis" x="6" y="314">북 ↑</text>
+
+          <!-- 축척 — GEO.kmToPixels(20) = 20 × 350/84.96 = 82.4px -->
+          <line class="app-schematic__scale" x1="20" y1="352" x2="102.4" y2="352"></line>
+          <line class="app-schematic__scale" x1="20" y1="348" x2="20" y2="356"></line>
+          <line class="app-schematic__scale" x1="102.4" y1="348" x2="102.4" y2="356"></line>
+          <text class="app-schematic__axis" x="20" y="343">20km</text>
+
+          <!-- ── 관측점 ──────────────────────────────────────────
+               cx·cy 는 geo.js 의 변환식으로 계산한 값을 박아 둔 것이다.
+               JS 가 꺼져도 점은 보인다. geo.js 는 bbox 가 바뀌었을 때
+               이 값을 다시 계산해 덮어쓰고, bbox 밖 지점은 건너뛴다.
+
+               준비 중인 다섯 곳은 누르면 안내를 띄운다. 보이는 점은 10px 이라
+               터치 타깃이 되지 못하므로 투명한 원(r=16)을 함께 둔다.
+               ---------------------------------------------------- -->
+          <g class="app-pin app-pin--more" data-station="sj086" role="button" tabindex="0"
+             aria-label="서산 지곡 — 설명 준비 중">
+            <circle cx="148.3" cy="25.8" r="5.3"></circle>
+            <circle class="app-pin__hit" cx="148.3" cy="25.8" r="16"></circle>
+          </g>
+          <g class="app-pin app-pin--more" data-station="btai5" role="button" tabindex="0"
+             aria-label="태안 안면도 — 설명 준비 중">
+            <circle cx="128.2" cy="189.0" r="5.3"></circle>
+            <circle class="app-pin__hit" cx="128.2" cy="189.0" r="16"></circle>
+          </g>
+          <g class="app-pin app-pin--more" data-station="btni5" role="button" tabindex="0"
+             aria-label="태안 내포 — 설명 준비 중">
+            <circle cx="180.3" cy="220.9" r="5.3"></circle>
+            <circle class="app-pin__hit" cx="180.3" cy="220.9" r="16"></circle>
+          </g>
+          <g class="app-pin app-pin--more" data-station="br001" role="button" tabindex="0"
+             aria-label="태안 고남 — 설명 준비 중">
+            <circle cx="178.1" cy="244.4" r="5.3"></circle>
+            <circle class="app-pin__hit" cx="178.1" cy="244.4" r="16"></circle>
+          </g>
+          <g class="app-pin app-pin--more" data-station="bbsi5" role="button" tabindex="0"
+             aria-label="보령 삽시도 — 설명 준비 중">
+            <circle cx="143.1" cy="264.7" r="5.3"></circle>
+            <circle class="app-pin__hit" cx="143.1" cy="264.7" r="16"></circle>
+          </g>
+
+          <!-- 유일하게 누를 수 있는 점 -->
+          <a class="app-pin app-pin--ready" data-station="fsch6" href="station.html?station=fsch6">
+            <circle cx="155.4" cy="152.7" r="8.2"></circle>
+            <text x="170.4" y="157.7">서산 창리</text>
+          </a>
+        </svg>
+      </figure>
+
+      <!-- ── 이 화면에서 할 수 있는 일 하나 — 지도 바로 아래 ─────────
+           해역명은 `{해역} 해역(확인 중)` 형태로 적는다.
+           `천수만(추정)` 이라고만 쓰면 무엇이 추정인지 알 수 없고,
+           수온이 추정치라는 뜻으로 읽힐 수 있다. 그건 사실이 아니다. -->
+      <div class="wv-stack wv-gap-2">
+        <div class="wv-stack">
+          <p class="wv-body app-hero__station">서산 창리</p>
+          <p class="wv-caption">천수만 해역(확인 중)</p>
+        </div>
+        <a class="wv-btn wv-btn--primary wv-btn--lg wv-btn--block" href="station.html?station=fsch6">설명 보기 →</a>
+      </div>
+
+    </div><!-- /.app-hero -->
+
+    <div class="wv-screen__body wv-stack wv-gap-5">
+
+      <!-- 캡션 — 거리는 실제 비율, 해안선은 아니다 -->
+      <p class="wv-caption">
+        이 그림은 개념도입니다. 지점 사이의 거리는 실제 비율이지만
+        해안선은 실제 모양이 아닙니다.
+      </p>
+
+      <!-- 범례 (§11 지도). 점 모양이 무엇을 뜻하는지만 말한다. -->
+      <div class="wv-row wv-gap-6 wv-wrap app-legend">
+        <span class="wv-row wv-gap-2">
+          <span class="app-legend__pin app-legend__pin--ready" aria-hidden="true"></span>
+          <span class="wv-caption">설명 제공</span>
+        </span>
+        <span class="wv-row wv-gap-2">
+          <span class="app-legend__pin" aria-hidden="true"></span>
+          <span class="wv-caption">설명 준비 중</span>
+        </span>
+      </div>
+
+      <!-- ── 나머지 다섯 곳 ────────────────────────────────────────
+           눌러서 갈 곳이 없으므로 접어 둔다.
+           준비 중 지점에는 수온을 표시하지 않는다 (PRD §5).
+           ------------------------------------------------------------ -->
+      <details class="app-more">
+        <summary>설명 준비 중인 지점 5곳</summary>
+        <ul class="wv-list app-more__list">
+          <li>
+            <button type="button" class="wv-list-item app-more__item" data-station="sj086">
+              <span class="wv-list-item__body">
+                <span class="wv-list-item__title">서산 지곡</span>
+                <span class="wv-list-item__meta">가로림만 해역(확인 중)</span>
+              </span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="wv-list-item app-more__item" data-station="btai5">
+              <span class="wv-list-item__body">
+                <span class="wv-list-item__title">태안 안면도</span>
+                <span class="wv-list-item__meta">천수만 해역(확인 중)</span>
+              </span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="wv-list-item app-more__item" data-station="btni5">
+              <span class="wv-list-item__body">
+                <span class="wv-list-item__title">태안 내포</span>
+                <span class="wv-list-item__meta">천수만 해역(확인 중)</span>
+              </span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="wv-list-item app-more__item" data-station="br001">
+              <span class="wv-list-item__body">
+                <span class="wv-list-item__title">태안 고남</span>
+                <span class="wv-list-item__meta">천수만 해역(확인 중)</span>
+              </span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="wv-list-item app-more__item" data-station="bbsi5">
+              <span class="wv-list-item__body">
+                <span class="wv-list-item__title">보령 삽시도</span>
+                <span class="wv-list-item__meta">천수만 입구 해역(확인 중)</span>
+              </span>
+            </button>
+          </li>
+        </ul>
+        <p class="wv-caption app-more__note">이 지점들은 아직 설명을 준비 중입니다.</p>
+      </details>
+
+      <hr class="wv-divider">
+
+      <p class="wv-caption">
+        배경지도 없음(개념도) · 각 관측점이 어느 해역에 속하는지는 <strong>확인 중</strong>입니다. 수온 값과는 무관합니다
+      </p>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ 준비 중 지점 안내 ═══════════════════════════════════════════
+     지도의 점과 접힌 목록, 두 곳에서 같은 안내를 띄운다.
+     <dialog> 를 쓴다 — 포커스 가두기와 Esc 닫기를 브라우저가 해 준다.
+
+     Waves 에 모달이 없다. .wv-sheet 는 화면 아래에 붙는 바텀시트라
+     "짧은 안내 하나"에는 과하다. .wv-card 를 가운데 띄우는 형태로 만든다.
+
+     수온을 비롯한 어떤 값도 넣지 않는다. 검증하지 않은 지점이다. (PRD §5)
+     지점명과 해역명은 geo.js 의 STATIONS 에서 가져온다.
+     ================================================================ -->
+<dialog class="app-modal" id="station-modal" aria-labelledby="modal-name">
+  <div class="app-modal__panel wv-stack wv-gap-5">
+    <div class="wv-stack">
+      <p class="wv-subtitle" id="modal-name"></p>
+      <p class="wv-caption" id="modal-area"></p>
+    </div>
+    <div class="wv-stack wv-gap-2">
+      <p class="wv-body">이 지점은 설명을 준비 중입니다.</p>
+      <p class="wv-body">현재 설명을 제공하는 곳은 서산 창리 한 곳입니다.</p>
+    </div>
+    <button type="button" class="wv-btn wv-btn--secondary wv-btn--block" id="modal-close">닫기</button>
+  </div>
+</dialog>
+
+</body>
+</html>

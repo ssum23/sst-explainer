@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-31T14:00:00+09:00",
+  "station": { "id":"fsch6","name":"서산 창리","area":"충남 천수만",
+               "lat":36.6163,"lon":126.3717 },
+
+  "status": {
+    "observed_at":"2021-07-31", "sst_basis":"daily_mean",
+    "current_sst":28.47,      "current_sst_raw":28.4708,
+    "daily_max_sst":29.00,    "daily_max_sst_raw":29.0000,
+    "climatology_mean":26.25, "climatology_mean_raw":26.2451,
+    "anomaly":2.23,           "anomaly_raw":2.2257,
+    "stage":"advisory", "stage_label":"주의보 기준 도달",
+    "days_over_advisory":2,
+    "stage_caveat":"공식 특보는 해역 단위이며 전망을 포함합니다. 이 값은 관측점 재계산치입니다."
+  },
+
+  "data_quality": {
+    "sst_missing_rate":0.0, "obs_count":48,
+    "judgment_withheld":false, "withheld_reason":null
+  },
+
+  "groups": [
+    { "id":"heat_input","name":"열유입","display_order":1,
+      "adopted":true,"representative_percentile":90.7,
+      "factors":[
+        {"id":"solar","name":"일사량","window":"7일","as_of":"2021-07-30",
+         "value":23.14,"value_raw":23.1429,"unit":"MJ/m²",
+         "percentile":87.3,"clim_sample_size":158,"quality":"ok"},
+        {"id":"airtemp","name":"기온","window":"7일","as_of":"2021-07-30",
+         "value":34.37,"value_raw":34.3714,"unit":"℃",
+         "percentile":90.7,"clim_sample_size":172,"quality":"ok"}]},
+    { "id":"background","name":"배경장","display_order":2,
+      "adopted":false,"representative_percentile":61.0,
+      "factors":[
+        {"id":"cum_anomaly","name":"30일 누적편차","window":"30일","as_of":"2021-07-31",
+         "value":12.40,"value_raw":12.3971,"unit":"℃·일",
+         "percentile":61.0,"clim_sample_size":172,"quality":"ok"}]}
+  ],
+
+  "conditions":[{"id":"tidal_phase","label":"neap",
+                 "display_text":"소조기 — 바닷물 섞임이 약해지는 시기입니다"}],
+
+  "adoption_threshold":{"percentile":90,"unit":"group_representative_max",
+                        "decided_at":"2026-07-30",
+                        "note":"사전 고정. 결과를 보고 바꾸지 않음"},
+
+  "climatology":{"method":"rolling_5y_min3","years":4,"sample_size":172,
+                 "window_days":21,"is_climate_normal":false,
+                 "note":"기후평년값(30년) 기준에 미달합니다"},
+
+  "explanation":{
+    "plain_template":null,
+    "plain":null,
+    "detailed_template":null, "detailed":null,
+    "verification":{"passed":false,"retries":0,"blocked":true}},
+
+  "disclaimer":"이 서비스는 국립수산과학원의 공식 특보를 대신하지 않습니다."
+}

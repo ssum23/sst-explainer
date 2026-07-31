@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# 환경 변수 — 인증키가 들어간다 (§12 인증키는 세 종류다)
+.env
+.env.*
+
+# Claude Code 로컬 설정 (기기별 개인 설정)
+.claude/settings.local.json

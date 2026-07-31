@@ -1,0 +1,888 @@
+/*
+ * 지도 화면 추가 스타일
+ * 충남 서해 연안 고수온 설명 서비스 · PRD 3.6 §5 ① / §11 지도
+ *
+ * 규칙
+ *   - waves-design-system.css 는 수정하지 않는다. 여기서만 덧쓴다.
+ *   - 색·간격·글자는 --wv-* 토큰만 참조한다. 하드코딩한 색을 넣지 않는다.
+ *   - --wv-danger / --wv-warning / --wv-success 계열은 쓰지 않는다.
+ *     상태 구분은 글자와 형태로만 한다. (지침 충돌 ②)
+ *
+ * 이 화면에서 할 수 있는 일은 창리로 가는 것 하나뿐이다.
+ * 나머지는 전부 그 하나를 방해하지 않는 크기로 둔다.
+ */
+
+/* ==========================================================================
+   0. 타이포 스케일 재정의
+   --------------------------------------------------------------------------
+   대상 사용자가 중장년이고, 보는 곳이 배 위·양식장·한여름 직사광선이다.
+   Waves 의 기본 스케일은 범용 모바일 앱 기준이라 이 조건에서 작다.
+
+   waves-design-system.css 는 손대지 않는다. 토큰만 여기서 덮어쓴다.
+   이 파일이 뒤에 실리므로 같은 :root 선언이 이긴다.
+
+   전 단계 +2px. 본문(--wv-text-md, 16 → 18)이 기준이고
+   나머지는 같은 폭으로 따라 올린다. 배율이 아니라 고정폭으로 올리는 이유는
+   작은 글씨일수록 문제가 크기 때문이다 — 캡션 14→16 은 +14%,
+   디스플레이 50→52 는 +4% 로, 필요한 쪽이 더 많이 커진다.
+
+   * 요청은 "--wv-text-base"였으나 그 이름의 토큰은 없다.
+     본문 기준값은 --wv-text-md 다 (원본 주석에 "본문 기준"으로 적혀 있다).
+   ========================================================================== */
+:root {
+  --wv-text-2xs: 13px; /* 11 */
+  --wv-text-xs:  14px; /* 12 */
+  --wv-text-sm:  16px; /* 14 */
+  --wv-text-md:  18px; /* 16 — 본문 */
+  --wv-text-lg:  21px; /* 19 */
+  --wv-text-xl:  25px; /* 23 */
+  --wv-text-2xl: 30px; /* 28 */
+  --wv-text-3xl: 36px; /* 34 */
+  --wv-text-4xl: 43px; /* 41 */
+  --wv-text-5xl: 52px; /* 50 */
+}
+
+/* ==========================================================================
+   hidden 속성이 실제로 먹게 한다
+   --------------------------------------------------------------------------
+   [hidden] 의 display:none 은 브라우저 기본 시트(user-agent)에 있어서
+   작성자 시트의 display 선언이면 무엇이든 이긴다. Waves 는 레이아웃 클래스에
+   display 를 걸어 두므로, 그 클래스가 붙은 요소는 hidden 을 줘도 그대로 보인다.
+
+     .wv-alert  → display:flex        (근거 파일 오류 박스, 판정 보류 문구)
+     .wv-stack  → display:flex        (본문 전체 묶음)
+     .wv-badge  → display:inline-flex (상태 배지)
+
+   렌더러가 hidden 을 껐다 켰다 하며 빈 줄을 감추는 구조이므로
+   이 규칙이 없으면 감추기가 통째로 동작하지 않는다.
+   ========================================================================== */
+[hidden] {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   화면 골격
+   .wv-screen 은 min-height:100% 라 부모 높이가 없으면 배경 그라디언트가
+   내용 높이에서 끊긴다. 뷰포트 높이를 바닥으로 깔아준다.
+   -------------------------------------------------------------------------- */
+/* ── 배경은 여기 한 곳에서만 잡는다 ───────────────────────────────
+   Waves 기본값은 --wv-bg-gradient(흰색 → #e8f6ff → #c4e9ff)라
+   페이지 위아래에서 색이 달라진다. 여기에 머리 영역의 배경 띠까지
+   겹치면 "위쪽 연한 하늘색이 중간에 끊긴" 것처럼 보인다.
+
+   단색 하나로 바꾼다. 마지막 흰 박스 아래까지 같은 색이다.
+   개별 섹션은 배경을 갖지 않는다 — 흰 박스(.wv-card--flat)만 예외이고
+   그건 배경이 아니라 카드다.
+   ---------------------------------------------------------------- */
+.wv-screen {
+  min-height: 100dvh;
+  background: var(--wv-accent-soft);
+}
+
+/* 한글은 어절 단위로만 끊는다. 기본값(break-word)은 문장 중간에서
+   글자를 잘라 "※ 두 체계는 단계 수도 기준도 다릅니 / 다" 처럼 읽힌다.
+   모든 화면의 본문에 적용한다. */
+body {
+  word-break: keep-all;
+  overflow-wrap: break-word;   /* 끊을 곳 없는 긴 URL 등의 최후 수단 */
+}
+
+/* ── 좌우 여백은 컨테이너 한 곳에서만 준다 ────────────────────────
+   머리말·본문·카드가 각자 padding 을 가지면 왼쪽 끝이 조금씩 어긋난다.
+   실제로 어긋나 있었다 — 앱바의 .wv-btn--ghost 가 padding-inline 12px 을
+   따로 가져서 "← 지도로" 만 32px 에서 시작했고(본문은 20px),
+   요인 카드는 자기 padding 20px 때문에 글이 40px 에서 시작했다.
+
+   그래서 이 한 값만 바꾸면 화면 전체의 좌우 여백이 함께 움직인다.
+   개별 요소는 가로 padding 을 갖지 않는다. 예외는 아래 두 곳뿐이고
+   둘 다 이 값을 참조해서 상쇄한다.
+   ---------------------------------------------------------------- */
+.wv-container {
+  --app-gutter: var(--wv-space-5);
+  padding-inline: var(--app-gutter);
+}
+
+.wv-appbar,
+.wv-screen__body {
+  padding-inline: 0;
+}
+
+/* 앱바 버튼 — 글자가 여백 선에 맞도록 자기 padding 을 지운다.
+   높이(--wv-control-lg)로 터치 타깃은 유지된다. */
+.wv-appbar .wv-btn {
+  padding-inline: 0;
+}
+
+/* 링크형 버튼에 밑줄을 그리지 않는다 */
+.wv-btn {
+  text-decoration: none;
+}
+
+/* 화면 제목. 본문(18px)과 구분이 안 돼서 키웠다.
+   25px 로 잡은 이유는 앱바 한 줄에 들어가야 하기 때문이다 —
+   "충남 서해 연안 관측점" 247px + ⓘ 버튼 76px + 간격 12px = 335px < 374px.
+   28px 를 넘기면 두 줄로 감긴다. */
+.wv-appbar__title {
+  font-family: var(--wv-font-display);
+  font-size: var(--wv-text-xl);
+  line-height: var(--wv-leading-snug);
+}
+
+/* ── 머리 영역 ────────────────────────────────────────────────
+   제목부터 「설명 보기 →」까지를 한 배경으로 묶어 아래와 구분한다.
+   여백 밖으로 빼내 화면 폭을 가득 채운다 (.app-group 과 같은 방식). */
+/* 머리 영역 — 배경 띠였던 것. 이제 배경은 .wv-screen 한 곳이라
+   여기는 아래 내용과의 간격만 맡는다. */
+.app-hero {
+  position: relative;
+  padding-bottom: var(--wv-space-6);
+}
+
+/* 아래 본문도 같은 층에 둔다 — 물결은 배경으로만 남는다 */
+.wv-screen__body {
+  position: relative;
+  z-index: var(--wv-z-content);
+}
+
+/* 버튼이 어떤 경우에도 클릭을 다 받도록 */
+.app-hero .wv-btn--block {
+  position: relative;
+  z-index: 1;
+}
+
+.app-hero__station {
+  font-weight: var(--wv-weight-semibold);
+}
+
+/* 설명 화면의 지점명 — 이 화면이 어디의 이야기인지 알려주는 문구다.
+   .wv-subtitle(21px)로는 아래 캡션과 구분이 약했다. 30px 로 올린다.
+   수온(52px)보다는 작다 — 주인공은 숫자다. */
+.app-head__station {
+  font-family: var(--wv-font-display);
+  font-size: var(--wv-text-2xl);
+  font-weight: var(--wv-weight-semibold);
+  line-height: var(--wv-leading-snug);
+  letter-spacing: var(--wv-tracking-tight);
+}
+
+.wv-screen__body {
+  padding-bottom: var(--wv-space-10);
+}
+
+/* 한 화면에 담기 위해 구획선 여백을 줄인다 */
+.wv-screen__body .wv-divider {
+  margin: var(--wv-space-2) 0;
+}
+
+/* --------------------------------------------------------------------------
+   개념도
+   실제 지형이 아니다. 해안선을 그리지 않는 이유는 index.html 주석에 적었다.
+   -------------------------------------------------------------------------- */
+/* 개념도. 머리 영역이 배경을 맡으므로 카드 테두리·배경을 두지 않는다. */
+.app-schematic {
+  margin: 0;
+  padding: 0;
+}
+
+/* 폭을 컨테이너 가득이 아니라 300px 로 줄이고 가운데 정렬한다.
+   비율은 건드리지 않는다 — viewBox 가 bbox 의 실거리 비율에서 나온 값이라
+   늘리거나 줄이면 점이 육지에 찍힌다. height:auto 가 비율을 지킨다. */
+.app-schematic svg {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin-inline: auto;
+}
+
+.app-schematic figcaption {
+  margin-top: var(--wv-space-2);
+}
+
+/* 육지. 아주 흐리게 — 점이 주인공이다.
+   바다는 칠하지 않는다. 카드 배경이 그대로 바다다.
+
+   --wv-surface-raised 를 쓰려 했으나 라이트 테마에서 그 값이
+   --wv-neutral-0(순백)이라 카드 배경과 같아 육지가 보이지 않는다.
+   한 칸 아래인 --wv-neutral-100 을 쓴다. 다크 테마를 붙이게 되면
+   여기도 함께 봐야 한다. */
+.app-land {
+  fill: var(--wv-neutral-100);
+  stroke: var(--wv-border);
+  stroke-width: 1;
+}
+
+/* SVG 안의 글자는 --wv-text-* 를 따라가지 않는다. viewBox 단위이기 때문이다.
+   viewBox 폭 350 이 화면에서 300px 로 그려지므로 배율은 0.857 이다.
+   화면에서 보이는 크기를 맞추려면 단위 = 원하는 px ÷ 0.857 로 잡는다.
+     지점 이름  19단위 → 화면 16.3px
+     해역명     15단위 → 화면 12.9px
+     방위·축척  16단위 → 화면 13.7px
+   지도 폭(max-width)을 바꾸면 이 세 값도 함께 봐야 한다. */
+
+/* 해역명 — 해안선보다도 흐리게. 위치를 알아볼 단서일 뿐이다. */
+.app-sea-label {
+  font-family: var(--wv-font-body);
+  font-size: 15px;
+  fill: var(--wv-text-subtle);
+}
+
+.app-schematic__axis {
+  font-family: var(--wv-font-body);
+  font-size: 16px;
+  fill: var(--wv-text-subtle);
+}
+
+
+.app-schematic__axis-line,
+.app-schematic__scale {
+  stroke: var(--wv-border-strong);
+  stroke-width: 1;
+}
+
+/* 지시선 — 해역명과 그 해역을 잇는다. 두 만 모두 폭이 45~49px 이라
+   이름(80~94px)이 안 들어가서 가로로 적고 선으로 연결한다.
+   점(--wv-accent)보다 눈에 띄면 안 되므로 --wv-border 로 옅게, 1px 로 얇게. */
+.app-schematic__leader {
+  stroke: var(--wv-border);
+  stroke-width: 1;
+  fill: none;
+}
+
+.app-schematic__axis-line {
+  stroke-dasharray: 3 4;
+}
+
+/* 지점 표시.
+   창리와 나머지의 차이는 '설명을 제공하는가'이지 수온의 높고 낮음이 아니다.
+   색 하나로만 가르지 않도록 크기·형태·글자(이름 표시)를 함께 다르게 둔다.
+
+   설명을 제공하는 곳이 한 곳뿐이라는 게 이 화면의 메시지다.
+   그러므로 창리가 커야 한다. 준비 중 지점이 더 크면 화면이 반대로 말한다.
+
+     설명 제공(창리)  지름 14px, 채운 원, --wv-accent
+     설명 준비 중     지름  9px, 테두리만, --wv-text-subtle
+
+   viewBox 350 이 화면 300px 로 그려지므로 배율은 0.857 이다.
+   r 은 화면 지름 ÷ 2 ÷ 0.857 로 잡는다 — 8.2 → 14.1px, 5.3 → 9.1px.
+   stroke-width 1.75 → 화면 1.5px.
+
+   요청한 --wv-text-tertiary 는 이 시스템에 없다. 세 번째 단계인
+   --wv-text-subtle(neutral-400)을 쓴다. */
+.app-pin circle {
+  fill: none;
+  stroke: var(--wv-text-subtle);
+  stroke-width: 1.75;
+}
+
+.app-pin text {
+  font-family: var(--wv-font-body);
+  font-size: 19px;
+  font-weight: var(--wv-weight-semibold);
+  fill: var(--wv-text);
+}
+
+.app-pin--ready {
+  cursor: pointer;
+}
+
+.app-pin--ready circle {
+  fill: var(--wv-accent);
+  stroke: var(--wv-accent);
+}
+
+/* 준비 중 지점 — 누르면 안내가 뜬다.
+   보이는 점은 10px 이라 손가락으로 못 짚는다.
+   투명한 원(r=16 → 지름 32px)을 겹쳐 터치 타깃을 만든다. */
+.app-pin--more {
+  cursor: pointer;
+}
+
+/* 터치용 투명 원. `.app-pin circle`(0,1,1)이 `.app-pin__hit`(0,1,0)보다
+   특정도가 높아서 전에는 이 규칙이 지고 있었다 — 그 결과 r=16 짜리 원이
+   흰색으로 채워지고 테두리까지 생겨, 준비 중 지점이 창리보다 큰
+   흰 원으로 보였다. 화면이 "준비 중이 더 중요하다"고 말하던 원인이다. */
+.app-pin circle.app-pin__hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.app-pin--more:hover circle:first-child,
+.app-pin--more:focus-visible circle:first-child {
+  stroke: var(--wv-text);
+  stroke-width: 2.5;
+}
+
+.app-pin--more:focus-visible {
+  outline: none;
+}
+
+/* 접힌 목록의 항목도 누를 수 있다 */
+.app-more__item {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   범례 — 점 모양의 뜻만 말한다. 목록에는 배지를 두지 않는다.
+   -------------------------------------------------------------------------- */
+/* 범례 — 두 표시의 크기를 같게 두고 채움/테두리로만 가른다.
+   범례는 무엇이 더 중요한지가 아니라 무엇이 무엇인지를 말하는 자리다.
+   크기는 지도의 큰 마커(설명 제공, 14px)에 맞춘다.
+
+   지도에서는 크기도 다르다 — 설명하는 곳이 한 곳뿐이라는 게 그 화면의
+   메시지이기 때문이다. 범례의 `설명 준비 중` 표시(14px)는 지도의
+   실제 마커(9px)보다 크다. 둘을 모두 만족시키는 크기는 없다. */
+.app-legend__pin {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--wv-radius-full);
+  background: transparent;
+  border: 1.5px solid var(--wv-text-subtle);
+  flex: none;
+}
+
+.app-legend__pin--ready {
+  background: var(--wv-accent);
+  border-color: var(--wv-accent);
+}
+
+/* --------------------------------------------------------------------------
+   접어 둔 다섯 곳
+   -------------------------------------------------------------------------- */
+.app-more > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+  min-height: var(--wv-control-md);
+  padding: var(--wv-space-2) var(--wv-space-3);
+  border-radius: var(--wv-radius);
+  border: 1px solid var(--wv-border);
+  background: var(--wv-surface);
+  color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
+  cursor: pointer;
+  list-style: none;
+}
+
+.app-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* 펼침 표시 — 색이 아니라 방향으로 알린다 */
+.app-more > summary::before {
+  content: "›";
+  font-size: var(--wv-text-lg);
+  line-height: 1;
+  color: var(--wv-text-subtle);
+  transition: transform var(--wv-duration-fast) var(--wv-ease-out);
+}
+
+.app-more[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.app-more > summary:hover {
+  background: var(--wv-surface-raised);
+  color: var(--wv-text);
+}
+
+.app-more__list {
+  margin-top: var(--wv-space-2);
+}
+
+.app-more__list .wv-list-item {
+  background: transparent;
+  border: 1px solid var(--wv-border);
+  min-height: var(--wv-control-md);
+}
+
+.app-more__list .wv-list-item:hover {
+  background: var(--wv-surface-raised);
+  border-color: var(--wv-border-strong);
+}
+
+.app-more__note {
+  margin-top: var(--wv-space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-more > summary::before { transition: none; }
+}
+
+/* ==========================================================================
+   설명 화면 — 상태 배지 영역
+   --------------------------------------------------------------------------
+   위 칸(우리 계산)과 아래 칸(그 계산의 근거)을 위아래로 놓는다.
+   좌우로 놓으면 두 칸이 짝이라고 주장하게 된다.
+
+   두 칸의 무게를 일부러 다르게 준다. 아래 칸은 위 칸의 각주이지
+   대응물이 아니다. 같은 크기로 두면 "우리 판정 대 공식 특보"로 읽힌다.
+
+   색으로 단계를 구분하지 않는다. 배지는 다섯 단계 모두 --neutral 하나다.
+   ========================================================================== */
+.app-stage__badge {
+  font-size: var(--wv-text-md);
+  padding: var(--wv-space-2) var(--wv-space-4);
+  border: 1px solid var(--wv-border-strong);
+  border-radius: var(--wv-radius-sm);
+  color: var(--wv-text);
+}
+
+/* 배지 옆 한 줄. 자세한 설명은 화면 아래 근거 박스에 있다. */
+.app-stage__basisline {
+  color: var(--wv-text-subtle);
+}
+
+.app-stage__basis {
+  padding: var(--wv-space-5);
+  border-radius: var(--wv-radius);
+  align-items: flex-start;
+}
+
+/* ⓘ 안내 — 단색 한 겹.
+   .wv-alert 기본형은 배경(--wv-info-soft)과 왼쪽 세로선(--wv-info)이
+   서로 다른 색이라 두 겹으로 보인다. 세로선을 지우고 배경만 남긴다. */
+.app-note {
+  background: var(--wv-surface-raised);
+  border-left: 0;
+  color: var(--wv-text-muted);
+}
+
+/* 근거 칸의 첫 줄만 조금 진하게 — 어느 기관의 기준인지가 이 칸의 제목이다 */
+.app-stage__source {
+  color: var(--wv-text);
+  font-weight: var(--wv-weight-semibold);
+}
+
+.app-stage__link {
+  padding-inline: 0;
+  color: var(--wv-accent);
+}
+
+.app-stage__link:hover {
+  background: transparent;
+  color: var(--wv-accent-hover);
+}
+
+/* 수온 — 이 화면에서 가장 큰 숫자.
+   .wv-display(43px)는 원본 Figma 손글씨 타이틀 크기라 숫자에는 과하다.
+   .wv-title(30px)을 쓰되 숫자만 한 단계 더 올린다.
+   body 에 tabular-nums 가 걸려 있어 28.5 → 28.6 갱신에도 자릿수가 흔들리지 않는다. */
+.app-sst {
+  font-size: var(--wv-text-5xl);
+  font-family: var(--wv-font-body);
+  font-weight: var(--wv-weight-semibold);
+  line-height: var(--wv-leading-tight);
+  letter-spacing: var(--wv-tracking-tight);
+}
+
+/* 자료 시각 — 수온과 요인의 창이 다르다는 것만 조용히 말한다 */
+.app-timing {
+  color: var(--wv-text-muted);
+}
+
+.app-load-error {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-load-error code {
+  font-family: var(--wv-font-mono);
+  font-size: 0.92em;
+}
+
+/* ==========================================================================
+   준비 중 지점 안내 모달
+   --------------------------------------------------------------------------
+   Waves 에 모달이 없다. .wv-sheet 는 화면 아래에 붙는 바텀시트라
+   "짧은 안내 하나"에는 과하다. .wv-card 형태를 가운데 띄운다.
+
+   <dialog> 를 쓰므로 열지 않았을 때의 display:none 은 브라우저가 준다.
+   그래서 기본 선택자에 display 를 쓰지 않는다 — 쓰면 항상 보인다.
+   ========================================================================== */
+.app-modal {
+  max-width: 340px;
+  width: calc(100% - var(--wv-space-8));
+  padding: 0;
+  border: 0;
+  border-radius: var(--wv-radius-lg);
+  background: var(--wv-surface-solid);
+  color: var(--wv-text);
+  box-shadow: var(--wv-shadow-lg);
+}
+
+.app-modal::backdrop {
+  background: rgba(14, 23, 31, .45);
+}
+
+.app-modal__panel {
+  padding: var(--wv-space-6) var(--wv-space-5) var(--wv-space-5);
+}
+
+/* <dialog> 미지원 브라우저 폴백 — [open] 일 때만 가운데 띄운다 */
+.app-modal[open] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: var(--wv-z-modal);
+}
+
+/* ==========================================================================
+   요인 막대 — 이 프로젝트의 유일한 신규 컴포넌트
+   --------------------------------------------------------------------------
+   .wv-progress 를 쓰지 않는다. 뜻이 정반대다.
+     .wv-progress = 채워진 양 (13% 진행됨)
+     요인 막대     = 분포에서의 가로 위치 (트랙 위의 점 하나)
+   진행 바로 그리면 "일사량이 13% 기여했다"로 읽혀서, 화면이 상시 노출하는
+   `원인 기여도가 아닙니다`를 그림이 정면으로 반박하게 된다. (지침 충돌 ③)
+
+   트랙만 .wv-progress 와 같은 모양으로 두고 채움 바 대신 마커를 얹는다.
+   ========================================================================== */
+.app-bar {
+  position: relative;
+  height: 12px;          /* 마커 지름. 트랙은 이 안에서 세로 중앙에 놓인다 */
+  margin: var(--wv-space-2) 0;
+}
+
+.app-bar__track {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  border-radius: var(--wv-radius-pill);
+  background: var(--wv-surface-raised);
+  border: 1px solid var(--wv-border);
+}
+
+/* 마커 — 백분위 위치의 점 하나. 트랙을 채우지 않는다.
+   translateX(-50%) 로 중심을 맞춘다. 지름을 JS 가 알 필요가 없어진다
+   (전에는 station.js 가 calc(N% - 6px) 로 반지름을 알고 있었다). */
+.app-bar__marker {
+  position: absolute;
+  top: 1px;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%);
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-accent);
+  z-index: 1;
+}
+
+/* 임계선 — 점선. 마커보다 위에, 마커보다 길게. (PRD §5)
+
+   점선인 이유. 실선은 마커를 가로지를 때 "여기서 잘린다"로 읽힌다.
+   점선은 마커 위아래로 점이 이어져 "기준선"이라는 뜻에 더 맞다.
+
+   ── border-left: dashed 를 쓰지 않은 이유 ─────────────────────
+   CSS 테두리의 dash 길이·간격은 브라우저가 정한다. 지정할 방법이 없다.
+   1.5px 테두리면 보통 4~5px 짜리 성긴 점선이 되는데,
+   그러면 10px 마커에 점 하나가 통째로 덮여 위치를 알 수 없다.
+   repeating-linear-gradient 로 3px 점 · 3px 간격을 직접 그린다.
+   ──────────────────────────────────────────────────────────
+   주기가 6px 이고 마커가 세로 1~11px 이므로, 마커 구간 안에 점이
+   두 번(0~3, 6~9) 걸린다. 마커에 덮여도 점 두 개는 남는다.
+
+   색. 요청한 --wv-text-secondary 는 이 시스템에 없다. 가장 가까운
+   --wv-text-muted 는 마커(#007dd1) 위에서 대비가 1.80:1 로,
+   전에 안 보이던 --wv-border-strong(2.11:1)보다도 낮다.
+   같은 문제가 되돌아오므로 --wv-text(4.18:1)를 쓴다. */
+.app-bar__threshold {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 1.5px;
+  transform: translateX(-50%);   /* 선의 중심이 임계 백분위에 오도록 */
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--wv-text) 0 3px,
+    transparent 3px 6px
+  );
+  z-index: 3;
+}
+
+/* 임계선이 위아래로 7px 씩 뚫고 나오므로 잘리지 않게 여백을 준다 */
+.app-bar {
+  margin: var(--wv-space-3) 0;
+  overflow: visible;
+}
+
+.app-bar__below {
+  position: relative;
+  min-height: 1.4em;
+}
+
+/* 임계선 라벨. `90` 이라고 쓰지 않는다 — 오른쪽에 이미 `상위 13%` 가 있고
+   백분위와 상위%는 커지는 방향이 반대라 나란히 두면 비교가 안 된다. (§11) */
+.app-bar__thlabel {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--wv-text-xs);
+  color: var(--wv-text-subtle);
+}
+
+/* ==========================================================================
+   정보 화면 — 특보 · 위기경보 기준 박스
+   --------------------------------------------------------------------------
+   두 박스를 위아래로 놓는다. 나란히 놓으면 예비특보=관심 처럼
+   짝지어진 것으로 읽힌다 — 화면의 ※ 문구가 부인하는 바로 그 오해다. (§5)
+
+   단계 이름에 색을 쓰지 않는다. 경보가 빨강이면 그 자체가 경보가 된다.
+   구분은 글자로만 한다. (지침 충돌 ②)
+   ========================================================================== */
+/* ── 정보 화면 전용 색 ─────────────────────────────────────────────
+   ★ 정보 화면 전용. 상태 표시에 쓰지 않는다. ★
+
+   여기서만 쓴다. 설명 화면의 상태 배지는 다섯 단계 모두 회색
+   (.wv-badge--neutral) 그대로다. 이 변수를 그쪽으로 가져가면
+   "색으로 상태를 표현하지 않는다"는 §5 원칙이 깨진다.
+
+   정보 화면은 제도를 설명하는 곳이지 "지금 위험하다"를 말하는 곳이 아니다.
+   특보 단계에 기상특보·재난문자의 관행 색을 쓰면 따로 배울 것이 없다.
+   `--wv-danger` · `--wv-warning` · `--wv-success` 는 여기서도 쓰지 않는다 —
+   그 이름을 쓰는 순간 상태 표시로 번져 나간다. 원색 primitive 만 참조한다.
+
+   초록(일반 상태)은 만들지 않는다. 특보 체계에 그런 단계가 없다.
+   ---------------------------------------------------------------- */
+.app-criteria {
+  --app-info-preliminary: var(--wv-gold-500);    /* 예비특보 — 노랑 */
+  --app-info-advisory:    var(--wv-orange-500);  /* 주의보  — 주황 */
+  --app-info-warning:     var(--wv-red-400);     /* 경보    — 빨강 */
+
+  /* 위기경보는 회색 농도다. 같은 색 계열을 두 체계에 쓰면
+     `경보`와 `경계`가 짝지어진 것처럼 보인다 — 이 화면이 막으려는 오해다.
+     그리고 네 단계 중 기준을 아는 것은 `경계` 하나뿐이라(§16 1주차),
+     모르는 것에 의미색을 칠하면 아는 것처럼 보인다.
+     농도는 순서만 말한다. 심각도를 주장하지 않는다. */
+  --app-info-crisis-1: var(--wv-neutral-300);    /* 관심 */
+  --app-info-crisis-2: var(--wv-neutral-500);    /* 주의 */
+  --app-info-crisis-3: var(--wv-neutral-700);    /* 경계 */
+  --app-info-crisis-4: var(--wv-neutral-900);    /* 심각 */
+
+  padding: var(--wv-space-5);
+  border-radius: var(--wv-radius);
+}
+
+/* ── 형태로도 나눈다 ──────────────────────────────────────────────
+   특보 = 채운 원(●) / 위기경보 = 테두리만 있는 사각(▢)
+   색을 빼고 흑백으로 봐도 두 체계가 다르다는 것이 보여야 한다.
+   ---------------------------------------------------------------- */
+.app-criteria__mark {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  align-self: center;
+}
+
+/* 특보 — 채운 원 */
+.app-criteria__mark--advisory-system {
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-text-subtle);
+}
+
+.app-criteria__row--preliminary .app-criteria__mark { background: var(--app-info-preliminary); }
+.app-criteria__row--advisory    .app-criteria__mark { background: var(--app-info-advisory); }
+.app-criteria__row--warning     .app-criteria__mark { background: var(--app-info-warning); }
+
+/* 위기경보 — 테두리만 있는 사각 */
+.app-criteria__mark--crisis {
+  border-radius: 2px;
+  background: transparent;
+  border: 2px solid var(--wv-text-subtle);
+}
+
+.app-criteria__stage--1 .app-criteria__mark { border-color: var(--app-info-crisis-1); }
+.app-criteria__stage--2 .app-criteria__mark { border-color: var(--app-info-crisis-2); }
+.app-criteria__stage--3 .app-criteria__mark { border-color: var(--app-info-crisis-3); }
+.app-criteria__stage--4 .app-criteria__mark { border-color: var(--app-info-crisis-4); }
+
+/* 네 단계 나열 — 이름과 표시만 있고 기준은 없다.
+   기준을 아는 것은 `경계` 하나뿐이라 아래 한 줄로 따로 적는다. */
+.app-criteria__stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wv-space-2) var(--wv-space-4);
+  margin: 0 0 var(--wv-space-3);
+  padding: 0;
+  list-style: none;
+  color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
+}
+
+.app-criteria__stages li {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+}
+
+.app-criteria__title {
+  font-weight: var(--wv-weight-semibold);
+}
+
+.app-criteria__rule {
+  height: 1px;
+  border: 0;
+  margin: var(--wv-space-3) 0;
+  background: var(--wv-border);
+}
+
+.app-criteria__list {
+  margin: 0;
+}
+
+.app-criteria__row {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-3);
+  padding: var(--wv-space-1) 0;
+}
+
+.app-criteria__row dt {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-3);
+  flex: none;
+  width: 6.4em;          /* `예비특보` 네 글자 + 표시 */
+  font-weight: var(--wv-weight-medium);
+}
+
+.app-criteria__row dd {
+  margin: 0;
+  color: var(--wv-text-muted);
+}
+
+/* ==========================================================================
+   한계 블록 — §11 이 "항상 노출, 7줄이 최종"이라고 못 박은 일곱 줄
+   --------------------------------------------------------------------------
+   지침 2장의 매핑대로 .wv-card--flat 에 담는다.
+   여백 밖으로 빼내 전폭으로 쓴다 — 카드 안쪽 padding 만 두면
+   가장 긴 줄(`관측점 한 곳의 자료이며…`)의 감김이 한 단계 더 심해진다.
+
+   경고가 아니라 고지다. 색을 쓰지 않고 글자 굵기도 올리지 않는다.
+   ========================================================================== */
+.app-limits {
+  padding: var(--wv-space-5);
+  border-radius: var(--wv-radius);
+  color: var(--wv-text-muted);
+  font-size: var(--wv-text-sm);
+  line-height: var(--wv-leading-normal);
+}
+
+.app-limits__title {
+  color: var(--wv-text);
+  font-weight: var(--wv-weight-semibold);
+}
+
+.app-limits__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* PRD 원문의 `· ` 를 그대로 재현한다 */
+.app-limits__list li::before {
+  content: "· ";
+}
+
+.app-factor__top {
+  font-weight: var(--wv-weight-semibold);
+  flex: none;
+}
+
+/* 미채택 그룹 — 채택 그룹과 같은 형식으로 그리되 이름만 한 단계 흐리게.
+   막대·마커·임계선·백분위·값은 건드리지 않는다.
+   흐리게 하면 왜 못 미치는지가 안 보여서, 값을 보여 주기로 한
+   이유가 사라진다.
+
+   요청한 --wv-text-secondary 는 이 시스템에 없다.
+   --wv-text(neutral-900)에서 한 단계 내려온 --wv-text-muted(neutral-600)를 쓴다. */
+.app-group--muted .app-group__name,
+.app-group--muted .app-factor__name {
+  color: var(--wv-text-muted);
+}
+
+.app-group__verdict {
+  margin-top: var(--wv-space-1);
+}
+
+/* 채택이 하나도 없을 때 맨 위에 오는 한 줄 */
+.app-factors__none {
+  font-weight: var(--wv-weight-medium);
+}
+
+/* ==========================================================================
+   개발용 견본 전환
+   --------------------------------------------------------------------------
+   실제 서비스에 나갈 것이 아니다. 화면 맨 아래, 가장 작은 글씨로 둔다.
+   눈에 띄면 안 되지만 시연 중에 눌러야 하므로 터치 타깃은 남긴다.
+
+   요청한 --wv-text-tertiary 는 이 시스템에 없다.
+   가장 흐린 --wv-text-subtle 과 가장 작은 --wv-text-2xs 를 쓴다.
+   ========================================================================== */
+.app-samples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wv-space-2);
+  margin-top: var(--wv-space-6);
+  padding-top: var(--wv-space-3);
+  border-top: 1px dashed var(--wv-border);
+  font-size: var(--wv-text-2xs);
+  color: var(--wv-text-subtle);
+}
+
+/* 시연 중에 오해가 없도록 — 이건 서비스 기능이 아니다 */
+.app-samples__tag {
+  padding: 1px var(--wv-space-2);
+  border: 1px dashed var(--wv-border-strong);
+  border-radius: var(--wv-radius-xs);
+  letter-spacing: var(--wv-tracking-wide);
+}
+
+.app-samples__label {
+  margin-right: var(--wv-space-1);
+}
+
+.app-samples__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px var(--wv-space-2);
+  border: 1px solid var(--wv-border);
+  border-radius: var(--wv-radius-xs);
+  color: var(--wv-text-subtle);
+  text-decoration: none;
+  font-weight: var(--wv-weight-medium);
+}
+
+.app-samples__btn span {
+  font-weight: var(--wv-weight-regular);
+}
+
+.app-samples__btn:hover {
+  border-color: var(--wv-border-strong);
+  color: var(--wv-text-muted);
+}
+
+/* 지금 보고 있는 견본. 색이 아니라 반전으로 — 이 화면에서 색은 뜻을 갖는다 */
+.app-samples__btn.is-current {
+  border-color: var(--wv-text-muted);
+  background: var(--wv-text-muted);
+  color: var(--wv-surface-solid);
+}
+
+/* 요인 카드. 아래 박스들과 좌우 끝을 맞추고 모서리를 같은 값으로 둥글린다.
+   전에는 여백 밖으로 빼내 전폭(414px)이었는데, 모서리를 둥글리면
+   그 곡선이 화면 가장자리에 붙어 잘린 것처럼 보인다.
+   전폭을 접고 컨테이너 안(374px)에 넣는다 — 아래 박스들과 같은 폭이다. */
+.app-group {
+  padding: var(--wv-space-5);
+  border-radius: var(--wv-radius);
+}

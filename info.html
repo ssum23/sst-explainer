@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>특보와 위기경보</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="waves-design-system.css">
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/info.js" defer></script>
+</head>
+<body>
+
+<!--
+  정보 화면 — PRD §5 ③ 목업 그대로.
+
+  전부 정적 텍스트다. AI 도 JSON 도 쓰지 않는다.
+  §5 설계 조건 1: 여기서 AI 를 쓰면 "숫자만 쓰고 단정하지 마라" 원칙이
+  기준값 설명과 정면충돌한다. 이 화면은 §10 검사기 대상이 아니다.
+
+  ── 목업에서 뺀 줄 셋 ────────────────────────────────────────
+  §5 가 "1주차에 채우지 못한 항목은 줄 자체를 빼고" 라고 했다.
+  미정 표시(`—`, `확인 중`)를 넣지 않는다. 줄을 없앤다.
+
+    · 위기경보 관심 · 주의 · 심각 의 기준 — §16 1주차 확인 대상
+    · `기준 확인일: YYYY-MM-DD`      — 아직 우리가 확인한 날이 없다
+
+  네 단계의 이름(관심 → 주의 → 경계 → 심각)은 뺀 것이 아니다.
+  §5 표가 확인해 둔 사실이고, 아래 ※ 문구의 "단계 수도 다릅니다"가
+  성립하려면 3 단계와 4 단계가 화면에서 보여야 한다.
+  기준을 모르는 것과 단계 이름을 모르는 것은 다르다.
+  ──────────────────────────────────────────────────────────
+-->
+
+<div class="wv-screen">
+
+  <div class="wv-container">
+
+    <header class="wv-appbar">
+      <!-- 왔던 화면으로 돌아간다 (§11). JS 가 꺼져 있으면 지도로 간다. -->
+      <a class="wv-btn wv-btn--ghost wv-btn--sm" id="back" href="index.html">← 뒤로</a>
+    </header>
+
+    <div class="wv-screen__body wv-stack wv-gap-5">
+
+      <h1 class="wv-title">특보와 위기경보</h1>
+
+      <p class="wv-body">
+        고수온 특보는 국립수산과학원이,<br>
+        위기경보는 해양수산부가 발표합니다.
+      </p>
+
+      <!-- ══ 두 박스는 위아래로 ═══════════════════════════════════
+           나란히 놓으면 예비특보=관심 처럼 짝지어진 것으로 읽힌다.
+           §5 가 명시한 것이고, 아래 ※ 문구가 부인하는 바로 그 오해다.
+           ============================================================ -->
+
+      <!-- 특보 — 채운 원(●) + 관행 색(노랑 · 주황 · 빨강).
+           기상특보·재난문자가 쓰는 순서라 따로 배울 것이 없다.
+           `일반 상태 초록`은 넣지 않는다. 특보 체계에 그런 단계가 없다.
+           이 색은 제도 설명이지 "지금 위험하다"는 주장이 아니다 —
+           설명 화면의 상태 배지는 다섯 단계 모두 회색 그대로다. -->
+      <section class="app-criteria wv-card--flat" aria-labelledby="box-advisory">
+        <p class="app-criteria__title" id="box-advisory">고수온 특보 · 국립수산과학원</p>
+        <hr class="app-criteria__rule">
+        <dl class="app-criteria__list">
+          <div class="app-criteria__row app-criteria__row--preliminary">
+            <dt><span class="app-criteria__mark app-criteria__mark--advisory-system" aria-hidden="true"></span>예비특보</dt>
+            <dd>수온 25℃ 도달</dd>
+          </div>
+          <div class="app-criteria__row app-criteria__row--advisory">
+            <dt><span class="app-criteria__mark app-criteria__mark--advisory-system" aria-hidden="true"></span>주의보</dt>
+            <dd>수온 28℃ 도달</dd>
+          </div>
+          <div class="app-criteria__row app-criteria__row--warning">
+            <dt><span class="app-criteria__mark app-criteria__mark--advisory-system" aria-hidden="true"></span>경보</dt>
+            <dd>28℃ 이상 3일 지속</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- 위기경보 — 테두리 사각(▢) + 회색 농도.
+           같은 색 계열을 두 체계에 쓰면 `경보`와 `경계`가 짝지어진 것처럼
+           보인다. 이 화면이 막으려는 바로 그 오해다.
+
+           네 단계 중 기준을 아는 것은 `경계` 하나뿐이다(§16 1주차).
+           모르는 것에 의미색을 칠하면 아는 것처럼 보이므로 회색만 쓴다.
+           농도는 순서만 말한다. 심각도를 주장하지 않는다.
+
+           형태도 다르다 — 특보는 원, 위기경보는 사각이다.
+           색을 빼고 흑백으로 봐도 두 체계가 다른 것이 보여야 한다. -->
+      <section class="app-criteria wv-card--flat" aria-labelledby="box-crisis">
+        <p class="app-criteria__title" id="box-crisis">고수온 위기경보 · 해양수산부</p>
+        <hr class="app-criteria__rule">
+        <ul class="app-criteria__stages">
+          <li class="app-criteria__stage--1"><span class="app-criteria__mark app-criteria__mark--crisis" aria-hidden="true"></span>관심</li>
+          <li class="app-criteria__stage--2"><span class="app-criteria__mark app-criteria__mark--crisis" aria-hidden="true"></span>주의</li>
+          <li class="app-criteria__stage--3"><span class="app-criteria__mark app-criteria__mark--crisis" aria-hidden="true"></span>경계</li>
+          <li class="app-criteria__stage--4"><span class="app-criteria__mark app-criteria__mark--crisis" aria-hidden="true"></span>심각</li>
+        </ul>
+        <dl class="app-criteria__list">
+          <div class="app-criteria__row app-criteria__stage--3">
+            <dt><span class="app-criteria__mark app-criteria__mark--crisis" aria-hidden="true"></span>경계</dt>
+            <dd>주의보 해역 4개 이상</dd>
+          </div>
+        </dl>
+      </section>
+
+      <p class="wv-alert app-note">
+        ※ 두 체계는 단계 수도 기준도 다릅니다. 서로 짝지어지지 않습니다.
+        주의보 하나만 발표돼도 위기경보는 '주의'일 수도 '경계'일 수도 있습니다.
+      </p>
+
+      <p class="wv-caption">
+        ※ 이 기준은 현재 기준입니다. 보고 계신 날짜에는 다른 기준이 적용됐을 수 있습니다.
+      </p>
+
+      <hr class="wv-divider">
+
+      <!-- §11 정보 화면 하단. 링크할 정확한 주소는 1주차 확정 대상이다 (§16). -->
+      <div class="wv-stack wv-gap-2">
+        <p class="wv-body">공식 특보는 국립수산과학원 발표를 따르십시오</p>
+        <a class="wv-btn wv-btn--ghost wv-btn--sm app-stage__link"
+           href="https://www.nifs.go.kr" target="_blank" rel="noopener">
+          국립수산과학원 발표 확인 ↗
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

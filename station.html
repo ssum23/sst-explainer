@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>서산 창리 — 수온 설명</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="waves-design-system.css">
+<link rel="stylesheet" href="assets/app.css">
+<!-- geo.js 는 지도용이지만 STATIONS(지점명·해역 표기)의 단일 출처이기도 하다.
+     머리말의 해역 표기를 지도와 같은 문자열로 맞추려고 함께 읽는다. -->
+<script src="assets/geo.js" defer></script>
+<script src="assets/format.js" defer></script>
+<script src="assets/station.js" defer></script>
+</head>
+<body>
+
+<!--
+  설명 화면 — 지금은 수온 · 평년 대비 · 상태 배지 · 자료 시각까지다.
+  요인 막대, AI 문장, 조건 영역, 한계 블록은 아직 없다.
+
+  값은 이 파일에 적지 않는다. assets/station.js 가 근거 파일을 fetch 해서 채운다.
+  어느 파일을 읽을지는 URL 이 정한다.
+      station.html                → data/fsch6.json  (기본값)
+      station.html?station=btni5  → data/btni5.json
+      station.html?sample=b       → data/sample-b.json
+  지점이 늘면 data/{id}.json 을 추가하고 지도에서 그 id 로 링크하면 된다.
+  아래 빈 자리는 전부 자리만 잡아 둔 것이다.
+
+  물결을 쓰지 않는다. 설명 화면은 수치와 문장이 주인공이고
+  배경이 움직이거나 시선을 끌면 안 된다. (지침 충돌 ④)
+-->
+
+<div class="wv-screen">
+  <div class="wv-container">
+
+    <header class="wv-appbar">
+      <a class="wv-btn wv-btn--ghost wv-btn--sm" href="index.html">← 지도로</a>
+      <a class="wv-btn wv-btn--ghost wv-btn--sm" href="info.html">ⓘ 특보란?</a>
+    </header>
+
+    <div class="wv-screen__body wv-stack wv-gap-5">
+
+      <!-- 근거 파일을 못 읽었을 때. 빈 화면을 보여 주지 않는다. -->
+      <div class="wv-alert app-load-error wv-stack wv-gap-2" id="load-error" hidden>
+        <p>근거 파일(<code id="load-error-source">data/fsch6.json</code>)을 읽지 못했습니다.</p>
+        <p class="wv-caption">
+          <code>file://</code> 로 열면 브라우저가 로컬 파일 읽기를 막습니다.
+          <code>python3 -m http.server</code> 로 띄운 뒤 <code>localhost:8000</code> 으로 보십시오.
+        </p>
+        <p class="wv-caption wv-mono" id="load-error-detail"></p>
+      </div>
+
+      <div class="wv-stack wv-gap-5" id="content" hidden>
+
+
+        <!-- 머리말 (§11 설명 머리말)
+             §11 원문은 `충남 천수만 · 서산 창리` 한 줄 단정형이나,
+             해역 구분이 1주차 확인 대상이라 지도와 같은 표기를 쓴다.
+             `{해역} 해역(확인 중)` — `해역`으로 지명임을 밝히고,
+             `추정` 대신 `확인 중`을 쓴다. `(추정)`만 붙이면 수온이
+             추정치라는 뜻으로 읽힐 수 있다. (§5, CHANGES #9) -->
+        <div class="wv-stack">
+          <!-- 이 화면이 어느 지점인지 알려주는 문구다. 작으면 안 된다. -->
+          <p class="app-head__station" id="head-station">서산 창리</p>
+          <p class="wv-caption" id="head-area">천수만 해역(확인 중)</p>
+          <p class="wv-caption" id="head-date" hidden></p>
+        </div>
+
+        <!-- ══ 수온 ══════════════════════════════════════════════
+             지침 2장: 수온은 .wv-display(50px)가 아니라 .wv-title 정도.
+             50px 는 원본 Figma 의 손글씨 타이틀 크기라 숫자에는 과하다.
+             tabular-nums 가 body 에 걸려 있어 mono 를 따로 쓰지 않는다.
+
+             보류일에는 이 두 줄이 통째로 사라진다. 값이 null 이기 때문이다.
+             빈 자리에 "—" 를 찍지 않는다. (§8)
+             ======================================================== -->
+        <div class="wv-stack wv-gap-2">
+          <p class="wv-title app-sst" id="sst" hidden></p>
+          <p class="wv-body" id="anomaly" hidden></p>
+        </div>
+
+        <!-- ══ 상태 배지 영역 ═══════════════════════════════════════
+             배지 자리에는 어느 기관 기준인지 한 줄만 남긴다.
+             해역 단위·전망 포함·발표 링크 같은 자세한 설명은
+             화면 아래 근거 박스로 내렸다 — 배지 옆에서 길게 말하면
+             우리 계산과 공식 특보가 짝지어진 것처럼 읽힌다.
+
+             공식 특보가 실제로 발령됐는지는 쓰지 않는다. 우리는 그 값을 모른다.
+             해양수산부 위기경보도 이 화면에 넣지 않는다 — 창리 한 곳만 보므로
+             전국 해역 수를 알 수 없어 단계 계산이 불가능하다. 정보 화면에서만 다룬다.
+             ============================================================ -->
+        <section class="app-stage wv-stack wv-gap-2" aria-labelledby="app-stage-label">
+          <p class="wv-overline" id="app-stage-label">이 관측점 계산</p>
+          <!-- 배지 · 연속일수 · 기준을 세로로 쌓는다.
+               한 줄에 늘어놓으면 374px 에서 감기고, 감기는 자리가
+               글자 수에 따라 달라져 줄이 들쭉날쭉해진다. -->
+          <div class="wv-row">
+            <span class="wv-badge wv-badge--neutral app-stage__badge" id="stage-label" hidden></span>
+          </div>
+          <p class="wv-caption" id="stage-days" hidden></p>
+          <p class="wv-caption app-stage__basisline">국립수산과학원 기준</p>
+        </section>
+
+        <!-- ══ 자료 시각 (§11) ══════════════════════════════════════
+             수온은 대상일까지, 요인은 그 전날까지다. 창이 다르다.
+             그 차이를 화면이 말하지 않으면 요인이 오늘 것으로 읽힌다. (§7)
+             ============================================================ -->
+        <div class="app-timing wv-stack wv-gap-1">
+          <p class="wv-caption" id="data-sst" hidden></p>
+          <p class="wv-caption" id="data-factor" hidden></p>
+        </div>
+
+        <!-- 판정 보류 (§11).
+             보류일에는 이 문구가 요인 영역 자리에 대신 들어간다.
+             그래서 요인 영역 바로 위에 둔다 — 두 번 말하지 않기 위해서다. -->
+        <p class="wv-alert" id="withheld" hidden></p>
+
+        <!-- ══ 요인 영역 (§11 「요인 영역」·「요인 영역 표시 규칙」) ══════
+             막대는 채우는 바가 아니라 트랙 위의 점 하나다.
+             진행 바로 그리면 "일사량이 13% 기여했다"로 읽혀서,
+             화면이 상시 노출하는 `원인 기여도가 아닙니다`를
+             그림이 정면으로 반박하게 된다. (§5)
+
+             내용은 station.js 가 만든다. 여기는 자리만 잡는다.
+             ============================================================ -->
+        <section class="app-factors wv-stack wv-gap-3" id="factors" hidden>
+          <h2 class="wv-subtitle">지금 평년을 벗어난 것</h2>
+          <div class="wv-stack wv-gap-3" id="factors-body"></div>
+          <!-- ⓘ 안내는 막대가 그려진 화면에서만 띄운다.
+               견본 B·C 에는 막대가 없어 안내할 대상이 없다. (§11) -->
+          <p class="wv-alert app-note" id="factors-note" hidden>
+            ⓘ 가로 위치는 평년 분포에서 얼마나 바깥인지를 나타냅니다. 원인 기여도가 아닙니다.
+          </p>
+        </section>
+
+        <!-- ══ 근거 박스 ═══════════════════════════════════════════
+             배지에서 내려온 자세한 설명. ⓘ 안내 아래에 둔다.
+             수치와 막대를 다 본 뒤에 "이게 무슨 기준이었나"를 읽는 순서다.
+             ============================================================ -->
+        <div class="app-stage__basis wv-card--flat wv-stack wv-gap-2">
+          <p class="wv-caption app-stage__source">기준: 국립수산과학원 고수온 특보</p>
+          <p class="wv-caption" id="stage-caveat" hidden></p>
+          <!-- 링크할 정확한 특보 페이지 주소는 1주차 확정 대상이다 (§16).
+               확인 전까지 기관 대표 주소로 둔다. -->
+          <a class="wv-btn wv-btn--ghost wv-btn--sm app-stage__link"
+             href="https://www.nifs.go.kr" target="_blank" rel="noopener">
+            국립수산과학원 발표 확인 ↗
+          </a>
+        </div>
+
+        <p class="wv-caption">
+          이 화면은 아직 자료 시각과 요인까지 만들었습니다. 설명 문장은 준비 중입니다.
+        </p>
+
+        <hr class="wv-divider">
+
+        <!-- ══ 한계 블록 (§11 「한계 블록」) ═══════════════════════════
+             §11 이 "항상 노출, 아래 7줄이 최종"이라고 못 박은 일곱 줄이다.
+             문구를 그대로 옮긴다. 줄을 더하거나 빼거나 고치지 않는다.
+             (제목 `이 서비스가 답하지 않는 것` 은 일곱에 들어가지 않는다 —
+              세 줄 + 네 줄 = 7 이다)
+
+             접거나 숨기지 않는다. stage 와 무관하게 늘 보인다.
+             보류일에도 보인다 — 그래서 §8 이 보류일 파일에서 최상위
+             `climatology` 블록만은 담기로 한 것이다. 아래 평년값 줄이
+             그 블록의 years · sample_size 를 쓴다.
+             ============================================================ -->
+        <!-- 두 박스로 나눈다. 성격이 다르다 —
+             앞은 서비스가 하지 않는 일, 뒤는 자료의 한계다.
+             일곱 줄과 문구는 그대로다. 나누기만 한다. -->
+        <section class="app-limits wv-card--flat wv-stack wv-gap-3" aria-labelledby="limits-title-1">
+          <p class="app-limits__title" id="limits-title-1">이 서비스가 답하지 않는 것</p>
+          <ul class="app-limits__list">
+            <li>며칠 더 갈지 예측하지 않습니다</li>
+            <li>안전한지 위험한지 판정하지 않습니다</li>
+            <li>공식 특보를 대신하지 않습니다</li>
+          </ul>
+        </section>
+
+        <section class="app-limits wv-card--flat wv-stack wv-gap-3" aria-labelledby="limits-title-2">
+          <p class="app-limits__title" id="limits-title-2">이 자료의 한계</p>
+          <div class="wv-stack wv-gap-1">
+            <!-- {n} 두 개는 climatology.years · climatology.sample_size 다.
+                 station.js 가 채운다. -->
+            <p id="limit-climatology"></p>
+            <p>기후평년값(30년) 기준에는 못 미칩니다</p>
+            <p>관측점 한 곳의 자료이며 해역 전체를 대표하지 않습니다</p>
+            <p>공식 특보는 국립수산과학원 발표를 따르십시오</p>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ══ 개발용 견본 전환 ═══════════════════════════════════════
+           실제 서비스에 나갈 것이 아니다. 시연·확인용이다.
+           그래서 화면 맨 아래, 한계 블록보다 아래, 가장 작은 글씨로 둔다.
+           `개발용` 이라고 적어 두어 시연 중에 오해가 없게 한다.
+
+           #content 밖에 있다 — 근거 파일을 못 읽었을 때야말로
+           다른 견본으로 바꿔 봐야 하기 때문이다.
+
+           눌린 상태는 station.js 가 현재 ?sample= 로 표시한다.
+           ============================================================ -->
+      <nav class="app-samples" aria-label="개발용 견본 전환">
+        <span class="app-samples__tag">개발용</span>
+        <span class="app-samples__label">견본</span>
+        <a class="app-samples__btn" href="station.html?station=fsch6" data-sample="">A <span>요인 있음</span></a>
+        <a class="app-samples__btn" href="station.html?sample=b" data-sample="b">B <span>요인 없음</span></a>
+        <a class="app-samples__btn" href="station.html?sample=c" data-sample="c">C <span>판정 보류</span></a>
+      </nav>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
