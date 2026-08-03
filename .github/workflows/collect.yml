@@ -37,7 +37,10 @@ jobs:
       - name: 변경이 있으면 커밋
         run: |
           if [ -z "$(git status --porcelain data/realtime)" ]; then
+            # 앞 단계가 「건너뜀」이면 여기로 온다. 초록 체크만 보고
+            # 성공으로 오해하지 않도록 요약에도 같은 사실을 남긴다.
             echo "변경 없음 — 커밋하지 않는다"
+            echo "- \`커밋\` **변경 없음 — 위 줄이 사유다**" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
@@ -47,3 +50,4 @@ jobs:
           # 앞 실행이 먼저 밀어 넣었을 수 있다. 다시 얹고 민다.
           git pull --rebase --autostash -q origin main || true
           git push -q origin HEAD:main
+          echo "- \`커밋\` **$(git rev-parse --short HEAD) 밀어 넣음**" >> "$GITHUB_STEP_SUMMARY"

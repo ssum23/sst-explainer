@@ -59,17 +59,39 @@ def log(msg):
     print(msg, flush=True)
 
 
+def verdict(msg):
+    """성공/실패를 **한 줄로** 가른다.
+
+    조용한 실패는 종료코드로 구분되지 않는다 — 어느 쪽이든 0 이다.
+    §12 가 「3회 연속 실패하면 이슈를 연다」고 적어 둔 자리인데 아직 없으므로,
+    최소한 **로그 한 줄과 실행 요약**으로는 구분되게 한다.
+
+    GITHUB_STEP_SUMMARY 에도 같은 줄을 쓴다 — 그러면 Actions 실행 화면에서
+    로그를 열지 않고도 보인다. 초록 체크만으로 성공을 믿지 않게.
+    """
+    line = '결과: ' + msg
+    print(line, flush=True)
+    path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if path:
+        try:
+            with open(path, 'a', encoding='utf-8') as fh:
+                fh.write('- `collect.py` **%s**\n' % msg)
+        except OSError:
+            pass
+    return 0
+
+
 def fetch(key):
     """응답 바이트. 실패하면 None — 사유는 종류만 찍는다 (URL 유출 방지)"""
     url = '%s?%s' % (URL, urllib.parse.urlencode({'id': 'risaList', 'key': key}))
     try:
         with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
             if r.status != 200:
-                log('HTTP %s — 파일을 건드리지 않는다' % r.status)
+                log('HTTP %s' % r.status)
                 return None
             return r.read()
     except Exception as e:
-        log('호출 실패 (%s) — 파일을 건드리지 않는다' % type(e).__name__)
+        log('호출 실패 (%s)' % type(e).__name__)
         return None
 
 
@@ -88,36 +110,35 @@ def rows_of(raw):
         return []
     text, enc = decode(raw)
     if text is None:
-        log('디코드 실패 (%d바이트) — 파일을 건드리지 않는다' % len(raw))
+        log('디코드 실패 (%d바이트)' % len(raw))
         return []
     if enc != 'utf-8':
         log('주의: 응답이 %s 로 왔다. 실측(2026-08-03)은 UTF-8 이었다' % enc)
     try:
         doc = json.loads(text)
     except ValueError:
-        log('JSON 파싱 실패 (%d바이트) — 파일을 건드리지 않는다' % len(raw))
+        log('JSON 파싱 실패 (%d바이트)' % len(raw))
         return []
     code = (doc.get('header') or {}).get('resultCode')
     if code != '00':
-        log('resultCode=%r — 파일을 건드리지 않는다' % code)
+        log('resultCode=%r' % code)
         return []
     items = (doc.get('body') or {}).get('item') or []
     got = [x for x in items if x.get('sta_cde') == STATION]
     if not got:
-        log('전국 %d행을 받았으나 %s 가 없다 — 파일을 건드리지 않는다'
-            % (len(items), STATION))
+        log('전국 %d행을 받았으나 %s 가 없다' % (len(items), STATION))
     return got
 
 
 def main():
     key = (os.environ.get('NIFS_KEY') or '').strip()
     if not key:
-        log('NIFS_KEY 가 비어 있다 — 아무것도 하지 않는다')
-        return 0
+        return verdict('건너뜀 — NIFS_KEY 가 비어 있다 '
+                       '(저장소 Secrets 에 NIFS_KEY 가 있는지 · 이름 오타가 없는지 확인)')
 
     got = rows_of(fetch(key))
     if not got:
-        return 0
+        return verdict('건너뜀 — 쌓을 것이 없다. 위 줄이 사유다. 이전 파일을 그대로 둔다')
 
     now = dt.datetime.now(KST)
     # fetched_at 을 남기는 이유 — CHANGES #20.
@@ -142,10 +163,9 @@ def main():
         fh.write('\n'.join(lines) + '\n')
 
     obs = got[0]
-    log('%d행 추가 — %s %s (관측 %s %s) → %s'
-        % (len(lines), STATION, stamp, obs.get('obs_dat'), obs.get('obs_tim'),
-           os.path.basename(path)))
-    return 0
+    return verdict('쌓음 %d줄 — 관측 %s %s · 받은 시각 %s → %s'
+                   % (len(lines), obs.get('obs_dat'), obs.get('obs_tim'),
+                      stamp, os.path.basename(path)))
 
 
 if __name__ == '__main__':
