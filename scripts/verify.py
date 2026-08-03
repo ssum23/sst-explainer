@@ -42,6 +42,7 @@ verify.py — 원자료에서 문서의 숫자를 다시 계산한다
   python3 scripts/verify.py hourly     §16 ⑧ 30분 vs 1시간 만
   python3 scripts/verify.py edge       §16 ⑦ A 창 경계 (비용 기록용)
   python3 scripts/verify.py bg         §16 ⑦ #28·#29 배경장 산출률
+  python3 scripts/verify.py bc         §16 ⑦ B·C 3년 미만 판정
 
 확정된 결정 (2026-08-03)
   §16 ⑧  일평균은 H1 정시(만점 24). 일 최고만 30분 그대로            confirmed_daily()
@@ -287,18 +288,24 @@ def run_rates(solar, tmax, sst):
     print('입력: H1 일평균(만점 24) · 일 최고는 30분 · 보류일 제외 (§16 ⑧ · #38)\n')
     daily = confirmed_daily(sst)
     mean_series = reliable_means(daily)
-    cums = {y: make_cum(mean_series, clim_years(y)) for y in (2020, 2021)}
 
     for lag in (1, 0):
         print('\n[%s]' % LAGS[lag])
         rows = []
-        n_season = n_asos = n_hold = 0
+        n_season = n_asos = n_hold = n_noclim = 0
         asos_gap = []
         for year in (2020, 2021):
-            ys = clim_years(year)
-            cum = cums[year]
+            cum_by_years = {}
             for D in season_days(year):
                 n_season += 1
+                ys = clim_years_daily(mean_series, D, C_NEED)   # §16 ⑦ B·C 확정
+                if not ys:
+                    n_noclim += 1
+                    continue
+                key = tuple(ys)
+                if key not in cum_by_years:
+                    cum_by_years[key] = make_cum(mean_series, list(ys))
+                cum = cum_by_years[key]
                 fv = {f: window_mean(s, D, lag)
                       for f, s in (('일사', solar), ('기온', tmax))}
                 if any(v is None for v in fv.values()):
@@ -340,8 +347,9 @@ def run_rates(solar, tmax, sst):
                              'adopted': heat >= THRESHOLD or (bg is not None and bg >= THRESHOLD)})
 
         print('  분석 기간 139일 × 2년        %4d' % n_season)
+        print('  − 평년 3년 미만 (⑦ C2)      −%3d' % n_noclim)
         print('  − ASOS 7일 평균 미산출       −%3d   %s ~ %s'
-              % (n_season - n_asos, asos_gap[0], asos_gap[-1]) if asos_gap else '')
+              % (len(asos_gap), asos_gap[0], asos_gap[-1]) if asos_gap else '')
         print('  = ASOS 산출 가능일           %4d' % n_asos)
         print('  − 수온 결측·부재로 보류      −%3d' % n_hold)
         print('  = 판정 대상일                %4d' % len(rows))
@@ -790,7 +798,128 @@ def run_bg(solar, tmax, sst):
                   % (name, '≥' if name == '이상군' else '<', a, b, c))
 
 
-# ── 6. 평년 분포 ──────────────────────────────────────────────────
+# ── 6. §16 ⑦ B·C — 「3년 미만」이 연 단위인가 일 단위인가 ─────────
+#
+# B  연 단위    2020 → 2017·2018·2019 = 3년. 창리 개시(2017-06-13) 전이어도 3년으로 센다
+#    일 단위    대상일마다 그 해가 실제로 기여했는지 보고 3년 미만이면 판정하지 않는다
+# C  일 단위일 때 「그 해가 있다」의 기준
+#
+# 연도 집합은 수온 일평균 가용성으로 정한다. 개시일 문제는 수온에만 있고(ASOS 는
+# 2016 부터 완비), §7 이 「수온과 ASOS 는 같은 연도 창을 쓴다」고 못박았기 때문이다.
+# 변수별 표본 수가 다른 것은 §7 이 이미 인정한다(견본 A 일사 158 / 기온 172).
+
+C_RULES = (('C1 하루라도', 1), ('C2 절반 이상', 22), ('C3 43일 전부', 43))
+
+# 확정값 (§16 ⑦ B·C, 2026-08-03). 「3년 미만」은 일 단위이며 기준은 C2 다 —
+# 43일 창에 22일 이상 기여한 해만 1년으로 센다.
+# 연 단위는 2020-05-15 에서 2017년이 하루도 기여하지 않는데 3년으로 세어
+# 표본 85일(실질 2년치)로 판정한다. A2 를 물리친 것과 같은 문제다.
+C_NEED = 22
+
+
+def year_contrib(mean_series, y, D):
+    """평년 연도 y 가 대상일 D 의 43일 창에 며칠 기여하는가 (수온 일평균 기준)"""
+    try:
+        base = dt.date(y, D.month, D.day)
+    except ValueError:
+        return 0
+    return sum(1 for k in range(-CLIM_HALF, CLIM_HALF + 1)
+               if (base + dt.timedelta(days=k)) in mean_series)
+
+
+def clim_years_daily(mean_series, D, need):
+    """일 단위 판정. need 일 이상 기여한 해만 세고, 3년 미만이면 판정하지 않는다"""
+    ys = [y for y in range(D.year - CLIM_YEARS, D.year)
+          if y in SST_YEARS and year_contrib(mean_series, y, D) >= need]
+    return ys if len(ys) >= CLIM_MIN else []
+
+
+def run_bc(solar, tmax, sst):
+    print('═' * 74)
+    print('§16 ⑦ B·C — 「3년 미만」이 연 단위인가 일 단위인가')
+    print('═' * 74)
+    daily = confirmed_daily(sst)
+    mean_series = reliable_means(daily)
+
+    print('\n창리 개시(%s)가 2020년 대상일에 어떻게 걸리는가' % STA_START)
+    print('  대상일   2017년 기여일수 / 43')
+    for md in ((5, 15), (5, 22), (5, 23), (6, 4), (6, 22), (7, 3), (7, 4), (8, 5)):
+        D = dt.date(2020, *md)
+        n = year_contrib(mean_series, 2017, D)
+        flags = ' '.join('%s %s' % (nm, '○' if n >= k else '✕') for nm, k in C_RULES)
+        print('  %s      %2d      %s' % (D, n, flags))
+
+    rules = [('연 단위 (현행)', None)] + list(C_RULES)
+    print('\n개발용 2020~2021 — 분석 기간 139일 × 2년 = 278일')
+    print('  %-14s %8s %8s %8s %10s %10s'
+          % ('기준', '판정대상', '이상군', '대조군', '수온표본최소', '배경장산출'))
+    out = {}
+    for label, need in rules:
+        n_judge = n_ab = n_ctl = n_bg = 0
+        smin = 10 ** 9
+        lost = []
+        for year in (2020, 2021):
+            cum_cache = {}
+            for D in season_days(year):
+                ys = clim_years(year) if need is None \
+                    else clim_years_daily(mean_series, D, need)
+                if not ys:
+                    lost.append(D)
+                    continue
+                fv = {f: window_mean(s, D, 1) for f, s in (('일사', solar), ('기온', tmax))}
+                if any(v is None for v in fv.values()):
+                    continue
+                day = daily.get(D)
+                if day is None or day['missing'] > MISSING_MAX:
+                    continue
+                pcts = {}
+                for f, s in (('일사', solar), ('기온', tmax)):
+                    smp = clim_samples(s, D, 1, ys)
+                    pcts[f] = percentile(smp, fv[f]) if smp else None
+                if any(v is None for v in pcts.values()):
+                    continue
+                n_judge += 1
+                if day['max'] >= 28:
+                    n_ab += 1
+                else:
+                    n_ctl += 1
+                _, ns = sst_clim(mean_series, D, ys)
+                smin = min(smin, ns)
+                key = tuple(ys)
+                if key not in cum_cache:
+                    cum_cache[key] = make_cum(mean_series, list(ys))
+                if cum_cache[key](D) is not None:
+                    n_bg += 1
+        out[label] = (n_judge, n_ab, n_ctl, smin, n_bg, lost)
+        print('  %-14s %8d %8d %8d %10d %10d'
+              % (label, n_judge, n_ab, n_ctl, smin, n_bg))
+
+    base_ab = out['연 단위 (현행)'][1]
+    print('\n  사전 기준 — 일 단위로 개발용 이상군이 %d일에서 **15일 미만**으로 줄면'
+          % base_ab)
+    print('  연 단위로 후퇴하고 §7 에 「2020년 5~7월 초는 실질 2년치」를 명시한다.')
+    for label, _ in C_RULES:
+        ab = out[label][1]
+        print('    %-14s 이상군 %2d일  →  %s'
+              % (label, ab, '기준 충족 (일 단위 가능)' if ab >= 15 else '**미달 — 연 단위로 후퇴**'))
+
+    for label, _ in C_RULES:
+        lost = out[label][5]
+        if lost:
+            print('\n  [%s] 판정 자체가 불가능해지는 날 %d일' % (label, len(lost)))
+            print('     %s ~ %s' % (lost[0], lost[-1]))
+
+    print('\n견본 3종의 연도별 기여일수 (수온 일평균 기준)')
+    for label, D in (('견본 A', dt.date(2021, 7, 31)), ('견본 B', dt.date(2021, 8, 5)),
+                     ('견본 C', dt.date(2021, 8, 11))):
+        parts = []
+        for y in clim_years(D.year):
+            n = year_contrib(mean_series, y, D)
+            parts.append('%d:%2d' % (y, n))
+        print('  %s %s   %s' % (label, D, ' · '.join(parts)))
+
+
+# ── 7. 평년 분포 ──────────────────────────────────────────────────
 
 def quantile(sorted_vals, q):
     """percentile() 과 같은 정의의 역함수 — 아래쪽 비율이 q 가 되는 값"""
@@ -830,7 +959,7 @@ def main():
         run_samples(solar, tmax); print()
     if what in ('all', 'clim'):
         run_clim(solar, tmax); print()
-    if what in ('all', 'rates', 'hourly', 'edge', 'bg'):
+    if what in ('all', 'rates', 'hourly', 'edge', 'bg', 'bc'):
         print('창리 수온 읽는 중 (zip 여러 개, 시간이 걸립니다)…')
         sst = read_sst(range(2016, 2022))
         print('  %d일\n' % len(sst))
@@ -840,6 +969,8 @@ def main():
             run_edge(solar, tmax, sst); print()
         if what in ('all', 'bg'):
             run_bg(solar, tmax, sst); print()
+        if what in ('all', 'bc'):
+            run_bc(solar, tmax, sst); print()
         if what in ('all', 'rates'):
             run_rates(solar, tmax, sst)
 
