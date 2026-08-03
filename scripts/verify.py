@@ -1102,6 +1102,30 @@ def evidence(D, sst, solar, tmax):
     return out
 
 
+NONE_EXCEEDED = '평년을 크게 벗어난 요인이 없습니다.'
+NOT_ENOUGH = '요인을 판정할 자료가 부족합니다.'
+
+
+def factors_summary(doc):
+    """요인 영역 머리의 요약 문구 — assets/station.js renderFactors 와 같은 규칙 (#69)
+
+    요약 문구는 「봤다」가 전제다. `없습니다` 는 **전부 adopted:false 일 때만** 낸다.
+    false 는 「봤는데 못 미쳤다」라 참이고, null 이 섞이면 거짓이다.
+    섞였을 때는 요약하지 않는다 — 한 문장으로 요약하면 반드시 과장이거나 축소다.
+    """
+    gs = doc.get('groups') or []
+    if not gs:
+        return None
+    if any(g.get('adopted') is True for g in gs):
+        return None
+    unknown = [g for g in gs if g.get('adopted') is None]
+    if not unknown:
+        return NONE_EXCEEDED
+    if len(unknown) == len(gs):
+        return NOT_ENOUGH
+    return None
+
+
 def check_schema(doc):
     """§8 스키마 불변식 — ③ 에서 확정한 규칙을 강제한다. 어긋난 것들의 목록을 낸다."""
     bad = []
@@ -1161,6 +1185,12 @@ def check_schema(doc):
                      '%s: quality 가 null 인데 값이 있다' % f.get('id'))
             if f.get('percentile') is None:
                 want(unknown, '%s: 백분위가 없는데 그룹이 adopted:null 이 아니다' % f.get('id'))
+
+    # #69 — adopted:null 이 하나라도 있으면 「없습니다」 요약을 낼 수 없다.
+    # 보지도 않고 평범했다고 말하는 것이며 §8:770 이 금지한 동작이다.
+    if any(g.get('adopted') is None for g in doc.get('groups') or []):
+        want(factors_summary(doc) != NONE_EXCEEDED,
+             'adopted:null 이 있는데 요약이 「%s」다' % NONE_EXCEEDED)
     return bad
 
 

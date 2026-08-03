@@ -194,13 +194,36 @@
     return wrap;
   }
 
+  /* 판정과 표시는 별개다 (§16 ③ #70).
+
+       adopted 는 그룹 단위 · quality 는 요인 단위 — 두 축이 독립이다.
+       그룹을 판정하지 못했다고 해서 본 요인까지 감추지 않는다.
+       §14 #26 이 "미채택 그룹도 값과 막대를 보여준다"고 정한 것과 같은 논리다.
+
+       quality  ok      값과 백분위 둘 다 → 막대를 그린다
+                partial 값만 있고 백분위 없음 → 값만 적고 막대는 안 그린다
+                null    값도 없다 → `자료 없음` 만 남긴다 */
   function factorRow(factor, threshold) {
     var row = el('div', 'app-factor wv-stack wv-gap-2');
+    var hasPct = typeof factor.percentile === 'number';
 
     var head = el('div', 'wv-row wv-between wv-gap-3');
     head.appendChild(el('span', 'wv-body app-factor__name', factor.name + ' (' + factor.window + ')'));
-    head.appendChild(el('span', 'wv-body app-factor__top', F.fmtTop(factor.percentile)));
+    head.appendChild(el('span', 'wv-body app-factor__top',
+                       hasPct ? F.fmtTop(factor.percentile) : '자료 없음'));
     row.appendChild(head);
+
+    /* 백분위가 없으면 막대를 그리지 않는다. 그릴 위치가 없다.
+       값이 있으면 값은 적는다 — 있는 것을 감추지 않는다. */
+    if (!hasPct) {
+      var only = F.fmtValue(factor.value_raw, factor.unit);
+      if (only) {
+        var alone = el('div', 'app-bar__below');
+        alone.appendChild(el('span', 'wv-caption', only));
+        row.appendChild(alone);
+      }
+      return row;
+    }
 
     row.appendChild(factorBar(factor, threshold));
 
@@ -314,24 +337,35 @@
     }
     card.appendChild(header);
 
-    if (isUnknown(g)) {
-      card.appendChild(el('p', 'wv-caption app-group__verdict', '값을 아직 확인하지 못했습니다'));
-      return card;   /* 막대를 그리지 않는다. 그릴 값이 없다. */
-    }
-
+    /* adopted 가 null 이어도 카드를 접지 않는다 (#70).
+       판정을 못 한 것이지 있는 값을 감추라는 뜻이 아니다.
+       요인마다 자기 상태를 말하게 두고, 카드 하단이 그룹 판정을 말한다. */
     (g.factors || []).forEach(function (f) {
       card.appendChild(factorRow(f, threshold));
     });
 
-    if (g.adopted) {
-      var reason = adoptionReason(g, threshold);
-      if (reason) {
-        card.appendChild(el('p', 'wv-caption app-group__verdict', reason));
-      }
-    } else {
-      card.appendChild(el('p', 'wv-caption app-group__verdict', '판정 기준에 못 미칩니다'));
+    var verdict = groupVerdict(g, threshold);
+    if (verdict) {
+      card.appendChild(el('p', 'wv-caption app-group__verdict', verdict));
     }
     return card;
+  }
+
+  /* 카드 하단 한 줄 — 그룹 판정을 말한다.
+
+       true   채택 사유
+       false  봤는데 못 미쳤다
+       null   판정을 못 했다. 본 요인이 하나라도 있으면 그렇게 말한다 —
+              값을 화면에 그려 놓고 "값을 아직 확인하지 못했습니다"라고 하면
+              화면이 자기 자신과 어긋난다. */
+  function groupVerdict(g, threshold) {
+    if (g.adopted === true) { return adoptionReason(g, threshold); }
+    if (g.adopted === false) { return '판정 기준에 못 미칩니다'; }
+    var seen = (g.factors || []).filter(function (f) {
+      return typeof f.percentile === 'number';
+    }).length;
+    return seen ? '일부 요인의 자료가 없어 판정하지 못했습니다'
+                : '값을 아직 확인하지 못했습니다';
   }
 
   /* ------------------------------------------------------------------
@@ -365,14 +399,25 @@
       return (a.display_order || 0) - (b.display_order || 0);
     });
     var threshold = (ev.adoption_threshold || {}).percentile;
-    var adopted = groups.filter(function (g) { return g.adopted; });
+    var adopted = groups.filter(function (g) { return g.adopted === true; });
+    var unknown = groups.filter(isUnknown);
 
     show('factors', true);
 
-    /* 채택이 하나도 없다는 사실을 먼저 짧게 말한다.
-       그 아래 나열되는 막대들이 왜 그런지를 보여 준다. */
+    /* 요약 문구는 「봤다」가 전제다 (§16 ③ #69).
+
+       "평년을 크게 벗어난 요인이 없습니다" 는 **전부 adopted:false 일 때만** 낸다.
+       false 는 "봤는데 못 미쳤다"라 참이고, null 이 섞이면 거짓이다 —
+       보지도 않고 평범했다고 말하는 것이며 §8 이 금지한 바로 그 동작이다.
+
+       null 이 섞였을 때 요약을 억지로 만들지 않는다. 섞인 상태를 한 문장으로
+       요약하면 반드시 과장이거나 축소다. 그룹 카드가 각자 말하게 둔다. */
     if (!adopted.length && groups.length) {
-      body.appendChild(el('p', 'wv-body app-factors__none', '평년을 크게 벗어난 요인이 없습니다.'));
+      if (!unknown.length) {
+        body.appendChild(el('p', 'wv-body app-factors__none', '평년을 크게 벗어난 요인이 없습니다.'));
+      } else if (unknown.length === groups.length) {
+        body.appendChild(el('p', 'wv-body app-factors__none', '요인을 판정할 자료가 부족합니다.'));
+      }
     }
 
     groups.forEach(function (g) {
@@ -382,8 +427,12 @@
     /* ⓘ 안내는 막대가 그려진 화면에서만 띄운다 (§11).
        이제 미채택 그룹도 막대를 그리므로, 요인이 하나라도 있으면 띄운다.
        보류일에는 groups 가 [] 라 여기 오지 않는다. */
+    /* 막대가 하나라도 그려졌는가 — 그룹이 아니라 요인 단위로 센다.
+       adopted:null 인 그룹도 백분위가 있는 요인은 막대를 그린다 (#70). */
     var hasBar = groups.some(function (g) {
-      return !isUnknown(g) && (g.factors || []).length > 0;
+      return (g.factors || []).some(function (f) {
+        return typeof f.percentile === 'number';
+      });
     });
     show('factors-note', hasBar);
   }
