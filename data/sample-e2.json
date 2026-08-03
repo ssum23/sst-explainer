@@ -1,0 +1,129 @@
+{
+  "schema_version": "2.0",
+  "_note": "견본 E′ (PRD §9) — §10 렌더 검사 19. `|anomaly|` 0.5 미만에서 「평년과 비슷합니다」로 렌더되는지. scripts/verify.py 가 생성한다.",
+  "_unconfirmed": {
+    "설명": "이 파일은 scripts/verify.py 가 원자료에서 생성한다 (`python3 scripts/verify.py build`). 아래는 코드가 계산하지 못해 여전히 비어 있는 값이다.",
+    "필드": [
+      "conditions — 조석 조건 (소조/중조/대조). 조위 자료가 없다",
+      "explanation.* — 설명층(모델 호출)은 4주차다"
+    ],
+    "덧붙임": [
+      "선정 기준(2026-08-03 고정): 개발용 2020~2021 · 판정 대상일 · round1(|raw|) < 0.5(부호 무관) 중에서 **경계 0.45 에 가장 가까운 날**(= |raw| 최대). 동점이면 가장 이른 날짜.",
+      "anomaly_raw = +0.4163 으로 경계 0.45 바로 아래다. E(-0.4557)와 함께 경계를 양쪽에서 감싼다.",
+      "배경장이 adopted:null 이다 — 창 30일에 판정 보류일이 있어 #28 보간 금지로 값을 만들지 않는다. 열유입은 미채택이라 **채택 0 · null 섞임**이고, CHANGES #69 에 따라 요약 문구를 내지 않는다."
+    ]
+  },
+  "generated_at": "2026-08-03T18:00:00+09:00",
+  "station": {
+    "id": "fsch6",
+    "name": "서산 창리",
+    "area": "충남 천수만",
+    "lat": 36.6163,
+    "lon": 126.3717
+  },
+  "status": {
+    "observed_at": "2021-09-13",
+    "sst_basis": "daily_mean",
+    "current_sst": 25.65,
+    "current_sst_raw": 25.65,
+    "daily_max_sst": 26.2,
+    "daily_max_sst_raw": 26.2,
+    "climatology_mean": 25.23,
+    "climatology_mean_raw": 25.2337,
+    "anomaly": 0.42,
+    "anomaly_raw": 0.4163,
+    "stage": "normal",
+    "stage_label": "특보 기준 미만",
+    "days_over_advisory": 0,
+    "stage_caveat": "공식 특보는 해역 단위이며 전망을 포함합니다. 이 값은 관측점 재계산치입니다."
+  },
+  "data_quality": {
+    "sst_missing_rate": 0.0,
+    "obs_count": 24,
+    "judgment_withheld": false,
+    "withheld_reason": null
+  },
+  "groups": [
+    {
+      "id": "heat_input",
+      "name": "열유입",
+      "display_order": 1,
+      "adopted": false,
+      "representative_percentile": 66.9,
+      "factors": [
+        {
+          "id": "solar",
+          "name": "일사량",
+          "window": "7일",
+          "as_of": "2021-09-12",
+          "value": 15.37,
+          "value_raw": 15.3657,
+          "unit": "MJ/m²",
+          "percentile": 62.1,
+          "clim_sample_size": 169,
+          "quality": "ok"
+        },
+        {
+          "id": "airtemp",
+          "name": "기온",
+          "window": "7일",
+          "as_of": "2021-09-12",
+          "value": 27.37,
+          "value_raw": 27.3714,
+          "unit": "℃",
+          "percentile": 66.9,
+          "clim_sample_size": 172,
+          "quality": "ok"
+        }
+      ]
+    },
+    {
+      "id": "background",
+      "name": "이전부터 높았던 수온",
+      "display_order": 2,
+      "adopted": null,
+      "representative_percentile": null,
+      "factors": [
+        {
+          "id": "cum_anomaly",
+          "name": "지난 30일 누적",
+          "window": "30일",
+          "as_of": null,
+          "value": null,
+          "value_raw": null,
+          "unit": "℃·일",
+          "percentile": null,
+          "clim_sample_size": null,
+          "quality": null
+        }
+      ]
+    }
+  ],
+  "conditions": [],
+  "adoption_threshold": {
+    "percentile": 90,
+    "unit": "group_representative_max",
+    "decided_at": "2026-07-30",
+    "note": "사전 고정. 결과를 보고 바꾸지 않음"
+  },
+  "climatology": {
+    "method": "rolling_5y_min3",
+    "years": 4,
+    "sample_size": 167,
+    "window_days": 21,
+    "is_climate_normal": false,
+    "note": "기후평년값(30년) 기준에 미달합니다"
+  },
+  "explanation": {
+    "plain_template": null,
+    "plain": null,
+    "detailed_template": null,
+    "detailed": null,
+    "verification": {
+      "passed": false,
+      "retries": 0,
+      "blocked": true
+    }
+  },
+  "disclaimer": "이 서비스는 국립수산과학원의 공식 특보를 대신하지 않습니다."
+}

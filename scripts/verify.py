@@ -1196,7 +1196,13 @@ def check_schema(doc):
 
 SAMPLES = (('견본 A', 'data/fsch6.json', dt.date(2021, 7, 31)),
            ('견본 B', 'data/sample-b.json', dt.date(2021, 8, 5)),
-           ('견본 C', 'data/sample-c.json', dt.date(2021, 8, 11)))
+           ('견본 C', 'data/sample-c.json', dt.date(2021, 8, 11)),
+           # ⑨ — §10 렌더 검사 18·19. 선정 기준은 숫자 보기 전에 고정했다:
+           #   E   음수 · round1(|raw|) ≥ 0.5   중 경계 0.45 에 가장 가까운 날
+           #   E′  round1(|raw|) < 0.5 (부호 무관) 중 경계 0.45 에 가장 가까운 날
+           #   동점이면 가장 이른 날짜
+           ('견본 E', 'data/sample-e.json', dt.date(2020, 9, 22)),
+           ('견본 E′', 'data/sample-e2.json', dt.date(2021, 9, 13)))
 
 
 def apply_evidence(doc, e):
