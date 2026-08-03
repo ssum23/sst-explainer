@@ -43,6 +43,8 @@ verify.py — 원자료에서 문서의 숫자를 다시 계산한다
   python3 scripts/verify.py edge       §16 ⑦ A 창 경계 (비용 기록용)
   python3 scripts/verify.py bg         §16 ⑦ #28·#29 배경장 산출률
   python3 scripts/verify.py bc         §16 ⑦ B·C 3년 미만 판정
+  python3 scripts/verify.py evidence   견본 JSON 3종이 코드와 일치하는지 검증
+  python3 scripts/verify.py build      견본 JSON 3종 재생성 (파일을 고친다)
 
 확정된 결정 (2026-08-03)
   §16 ⑧  일평균은 H1 정시(만점 24). 일 최고만 30분 그대로            confirmed_daily()
@@ -919,7 +921,264 @@ def run_bc(solar, tmax, sst):
         print('  %s %s   %s' % (label, D, ' · '.join(parts)))
 
 
-# ── 7. 평년 분포 ──────────────────────────────────────────────────
+# ── 7. 근거 파일 생성 (§8) — 견본 A·B·C ──────────────────────────
+#
+# 확정된 결정을 전부 적용한다.
+#   §16 ⑧   일평균·결측률은 H1 정시(만점 24). 일 최고만 30분          #1·#2·#3
+#   §16 ⑦   A1 창 경계 · C2 「3년 미만」 일 단위                      #26·#40
+#   #28·#29·#38  판정 보류일의 일평균은 어떤 계산에도 쓰지 않는다
+#   §10     사사오입은 1/10 단위 정수 산술. round() 도 float 도 안 쓴다  #9·#10
+#
+# 계산되지 않는 것은 손대지 않는다 — 조석(conditions)·stage_label·설명문·면책.
+
+STAGE_LABEL = {'normal': '특보 기준 미만', 'preliminary': '예비특보 기준 도달',
+               'advisory': '주의보 기준 도달', 'warning': '경보 기준 도달',
+               'withheld': '판정 보류'}
+
+# 예비특보 25℃ 는 2024년 6월 이후 기준이다. 그 이전은 normal (§8)
+PRELIM_FROM = dt.date(2024, 6, 1)
+
+
+def frac(x):
+    """float/str → Fraction. 십진 표기를 그대로 옮긴다 (2진 오차를 들이지 않는다)"""
+    from decimal import Decimal
+    return Fraction(Decimal(str(x)))
+
+
+def round_half_up(x, nd):
+    """사사오입. 절댓값 기준으로 반올림한다 (§10, assets/format.js round1 과 같은 정의).
+
+    파이썬 round() 는 은행가 반올림이라 26.25 → 26.2 가 된다. 쓰지 않는다.
+    """
+    if x is None:
+        return None
+    sign = -1 if x < 0 else 1
+    a = abs(Fraction(x)) * (10 ** nd)
+    return sign * Fraction((2 * a + 1) // 2, 10 ** nd)
+
+
+def num(x, nd):
+    """JSON 에 넣을 수 (사사오입 뒤 float). None 은 그대로 None"""
+    return None if x is None else float(round_half_up(x, nd))
+
+
+def exact_h1(pairs):
+    """H1 정시 일평균 — 1/10 단위 정수에서 정확히 계산한다"""
+    q = to_hourly(pairs, 'H1')
+    if not q:
+        return None, 0
+    t = [Fraction(round(v * 10), 10) for _, v in q]
+    return sum(t) / len(t), len(t)
+
+
+def evidence(D, sst, solar, tmax):
+    """대상일 D 의 근거 파일 계산 필드. 값은 Fraction 이다."""
+    pairs = sst.get(D)
+    if pairs is None:
+        return None
+    mean, n_obs = exact_h1(pairs)
+    missing = Fraction(1) - Fraction(n_obs, OBS_PER_DAY_H)
+    withheld = missing > Fraction(MISSING_MAX).limit_denominator(100)
+    d30 = [v for _, v in pairs]
+    out = {'observed_at': D, 'obs_count': n_obs, 'missing': missing,
+           'daily_max': frac(max(d30)), 'withheld': withheld}
+
+    # 평년값 — 판정 보류일을 뺀 H1 일평균으로 만든다 (#38)
+    means = {}
+    for d, p in sst.items():
+        m, k = exact_h1(p)
+        if m is not None and Fraction(1) - Fraction(k, OBS_PER_DAY_H) <= Fraction(1, 5):
+            means[d] = m
+    ys = clim_years_daily(means, D, C_NEED)
+    smp = [means[dt.date(y, D.month, D.day) + dt.timedelta(days=k)]
+           for y in ys for k in range(-CLIM_HALF, CLIM_HALF + 1)
+           if dt.date(y, D.month, D.day) + dt.timedelta(days=k) in means]
+    out['clim_years'] = len(ys)
+    out['clim_n'] = len(smp)
+    out['clim'] = (sum(smp) / len(smp)) if smp else None
+
+    if withheld:
+        out.update(stage='withheld', mean=None, anomaly=None,
+                   days_over=0, groups=None)
+        return out
+
+    out['mean'] = mean
+    out['anomaly'] = (mean - out['clim']) if out['clim'] is not None else None
+
+    # 28℃ 이상 연속 일수 — 일평균 기준, 보류일에서 끊긴다 (§8)
+    n_over = 0
+    d = D
+    while d in means and means[d] >= 28:
+        n_over += 1
+        d -= dt.timedelta(days=1)
+    out['days_over'] = n_over
+    if mean >= 28:
+        out['stage'] = 'warning' if n_over >= 3 else 'advisory'
+    elif mean >= 25 and D >= PRELIM_FROM:
+        out['stage'] = 'preliminary'
+    else:
+        out['stage'] = 'normal'
+
+    # 열유입 — ASOS 7일 평균, 창 D−7~D−1 (§7)
+    facs = {}
+    for fid, series in (('solar', solar), ('airtemp', tmax)):
+        vals = [series.get(D - dt.timedelta(days=i + 1)) for i in range(FACTOR_DAYS)]
+        if any(v is None for v in vals):
+            facs[fid] = None
+            continue
+        v = sum(frac(x) for x in vals) / FACTOR_DAYS
+        s = []
+        for y in ys:
+            base = dt.date(y, D.month, D.day)
+            for k in range(-CLIM_HALF, CLIM_HALF + 1):
+                w = [series.get(base + dt.timedelta(days=k - i - 1))
+                     for i in range(FACTOR_DAYS)]
+                if all(x is not None for x in w):
+                    s.append(sum(frac(x) for x in w) / FACTOR_DAYS)
+        facs[fid] = {'value': v, 'n': len(s),
+                     'pct': (Fraction(sum(1 for x in s if x < v), len(s)) * 100)
+                            if s else None}
+
+    # 이전부터 높았던 수온 — 30일 누적편차, 창 D−29~D (§7). #28 보간 금지
+    def clim_day(d):
+        s = [means[dt.date(y, d.month, d.day) + dt.timedelta(days=k)]
+             for y in ys for k in range(-CLIM_HALF, CLIM_HALF + 1)
+             if dt.date(y, d.month, d.day) + dt.timedelta(days=k) in means]
+        return (sum(s) / len(s)) if s else None
+
+    def cum(Dx):
+        tot = Fraction(0)
+        for i in range(CUM_DAYS):
+            d = Dx - dt.timedelta(days=i)
+            v, c = means.get(d), clim_day(d)
+            if v is None or c is None:
+                return None
+            tot += v - c
+        return tot
+
+    cv = cum(D)
+    if cv is None:
+        facs['cum_anomaly'] = None
+    else:
+        s = [c for y in ys for k in range(-CLIM_HALF, CLIM_HALF + 1)
+             for c in [cum(dt.date(y, D.month, D.day) + dt.timedelta(days=k))]
+             if c is not None]
+        facs['cum_anomaly'] = {'value': cv, 'n': len(s),
+                               'pct': (Fraction(sum(1 for x in s if x < cv), len(s)) * 100)
+                                      if s else None}
+    out['groups'] = facs
+    return out
+
+
+SAMPLES = (('견본 A', 'data/fsch6.json', dt.date(2021, 7, 31)),
+           ('견본 B', 'data/sample-b.json', dt.date(2021, 8, 5)),
+           ('견본 C', 'data/sample-c.json', dt.date(2021, 8, 11)))
+
+
+def apply_evidence(doc, e):
+    """계산된 값을 근거 파일에 넣는다. 계산되지 않는 필드는 손대지 않는다."""
+    st, dq = doc['status'], doc['data_quality']
+    st['observed_at'] = e['observed_at'].isoformat()
+    st['daily_max_sst'] = num(e['daily_max'], 2)
+    st['daily_max_sst_raw'] = num(e['daily_max'], 4)
+    st['stage'] = e['stage']
+    st['stage_label'] = STAGE_LABEL[e['stage']]
+    st['days_over_advisory'] = e['days_over']
+    for key, val in (('current_sst', e['mean']), ('climatology_mean', e['clim']),
+                     ('anomaly', e['anomaly'])):
+        st[key] = num(val, 2) if not e['withheld'] else None
+        st[key + '_raw'] = num(val, 4) if not e['withheld'] else None
+    dq['obs_count'] = e['obs_count']
+    dq['sst_missing_rate'] = num(e['missing'], 3)
+    dq['judgment_withheld'] = e['withheld']
+    doc['climatology']['years'] = e['clim_years']
+    doc['climatology']['sample_size'] = e['clim_n']
+
+    if e['withheld']:
+        doc['groups'] = []
+        return doc
+
+    unit = {'solar': 'MJ/m²', 'airtemp': '℃', 'cum_anomaly': '℃·일'}
+    for g in doc['groups']:
+        pcts = []
+        for f in g['factors']:
+            c = e['groups'].get(f['id'])
+            f['unit'] = unit[f['id']]
+            f['as_of'] = (e['observed_at'] if f['id'] == 'cum_anomaly'
+                          else e['observed_at'] - dt.timedelta(days=1)).isoformat()
+            if c is None:
+                f.update(value=None, value_raw=None, percentile=None,
+                         clim_sample_size=None, quality=None, as_of=None)
+                pcts.append(None)
+                continue
+            f.update(value=num(c['value'], 2), value_raw=num(c['value'], 4),
+                     percentile=num(c['pct'], 1),
+                     clim_sample_size=c['n'], quality='ok')
+            pcts.append(round_half_up(c['pct'], 1))
+        if any(p is None for p in pcts):
+            g['adopted'] = None
+            g['representative_percentile'] = None
+        else:
+            rep = max(pcts)
+            g['adopted'] = rep >= THRESHOLD
+            g['representative_percentile'] = float(rep)
+    return doc
+
+
+def run_evidence(solar, tmax, sst, write=False):
+    import json
+    print('═' * 74)
+    print('§8 근거 파일 — 확정 규칙으로 %s' % ('재생성' if write else '검증'))
+    print('═' * 74)
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ok = True
+    for label, rel, D in SAMPLES:
+        path = os.path.join(root, rel)
+        e = evidence(D, sst, solar, tmax)
+        doc = json.load(open(path, encoding='utf-8'))
+        want = apply_evidence(json.loads(json.dumps(doc)), e)
+        print('\n%s  %s  (%s)' % (label, D, rel))
+        st, dq = want['status'], want['data_quality']
+        print('   관측 %s/24 · 결측률 %s · stage %s · 연속 %s일'
+              % (dq['obs_count'], dq['sst_missing_rate'], st['stage'],
+                 st['days_over_advisory']))
+        print('   일평균 %s (%s) · 평년 %s (%s) · 평년대비 %s (%s) · 일최고 %s'
+              % (st['current_sst'], st['current_sst_raw'],
+                 st['climatology_mean'], st['climatology_mean_raw'],
+                 st['anomaly'], st['anomaly_raw'], st['daily_max_sst']))
+        print('   평년 %d년 · 표본 %d일' % (want['climatology']['years'],
+                                        want['climatology']['sample_size']))
+        for g in want['groups']:
+            print('   %-10s adopted=%-5s rep=%s' % (g['id'], g['adopted'],
+                                                    g['representative_percentile']))
+            for f in g['factors']:
+                print('      %-12s %-9s %-6s 표본 %-5s as_of %s'
+                      % (f['id'], f['value_raw'], f['percentile'],
+                         f['clim_sample_size'], f['as_of']))
+        if write:
+            want['generated_at'] = GENERATED_AT
+            with open(path, 'w', encoding='utf-8') as fh:
+                json.dump(want, fh, ensure_ascii=False, indent=2)
+                fh.write('\n')
+            print('   → 기록함')
+        else:
+            cur = json.loads(json.dumps(doc))
+            cur.pop('generated_at', None)
+            chk = json.loads(json.dumps(want))
+            chk.pop('generated_at', None)
+            same = json.dumps(cur, sort_keys=True) == json.dumps(chk, sort_keys=True)
+            print('   파일과 %s' % ('일치' if same else '**불일치**'))
+            ok = ok and same
+    if not write:
+        print('\n%s' % ('세 견본 모두 코드가 재현한다.' if ok
+                        else '**불일치가 있다. `verify.py build` 로 재생성하라.**'))
+    return ok
+
+
+GENERATED_AT = '2026-08-03T18:00:00+09:00'
+
+
+# ── 8. 평년 분포 ──────────────────────────────────────────────────
 
 def quantile(sorted_vals, q):
     """percentile() 과 같은 정의의 역함수 — 아래쪽 비율이 q 가 되는 값"""
@@ -959,7 +1218,7 @@ def main():
         run_samples(solar, tmax); print()
     if what in ('all', 'clim'):
         run_clim(solar, tmax); print()
-    if what in ('all', 'rates', 'hourly', 'edge', 'bg', 'bc'):
+    if what in ('all', 'rates', 'hourly', 'edge', 'bg', 'bc', 'evidence', 'build'):
         print('창리 수온 읽는 중 (zip 여러 개, 시간이 걸립니다)…')
         sst = read_sst(range(2016, 2022))
         print('  %d일\n' % len(sst))
@@ -971,6 +1230,8 @@ def main():
             run_bg(solar, tmax, sst); print()
         if what in ('all', 'bc'):
             run_bc(solar, tmax, sst); print()
+        if what in ('all', 'evidence', 'build'):
+            run_evidence(solar, tmax, sst, write=(what == 'build')); print()
         if what in ('all', 'rates'):
             run_rates(solar, tmax, sst)
 

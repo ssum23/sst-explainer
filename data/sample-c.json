@@ -1,57 +1,73 @@
 {
   "schema_version": "1.0",
-
   "_note": "견본 C — 판정 보류 (PRD §9). JSON 에는 주석이 없어 이 필드로 남긴다. 화면은 읽지 않는다.",
   "_unconfirmed": {
-    "설명": "PRD §9 견본 C 표에 없는 값. 지어내지 않고 null 로 둔다. 3주차 원자료 재계산 대상.",
+    "설명": "이 파일은 scripts/verify.py 가 원자료에서 생성한다 (`python3 scripts/verify.py build`). 아래는 코드가 계산하지 못해 여전히 비어 있는 값이다.",
     "필드": [
-      "climatology.years — 평년값 계산에 쓴 연수",
-      "climatology.sample_size — 평년값 표본 일수",
-      "data_quality.withheld_reason — 보류 사유 코드"
+      "data_quality.withheld_reason — 보류 사유 코드. enum 이 아직 정의되지 않았다",
+      "explanation.* — 설명층(모델 호출)은 4주차다"
     ],
     "덧붙임": [
-      "years·sample_size 는 견본 A·B 가 둘 다 4년/172일이지만 날마다 다시 세는 값이라 옮겨 쓸 수 없다.",
-      "이 둘이 null 이면 한계 블록의 `평년값: 최근 N년 · 표본 N일` 줄을 감춘다. 나머지 세 줄은 그대로 나온다.",
+      "climatology.years·sample_size 는 채워졌다. §8 이 보류일에도 최상위 climatology 블록만은 담기로 했기 때문이다.",
       "current_sst · climatology_mean · anomaly · groups · conditions 가 비어 있는 것은 미확보가 아니라 §8 보류일 규약이다."
     ]
   },
-
-  "generated_at": null,
-  "station": { "id":"fsch6","name":"서산 창리","area":"충남 천수만",
-               "lat":36.6163,"lon":126.3717 },
-
+  "generated_at": "2026-08-03T18:00:00+09:00",
+  "station": {
+    "id": "fsch6",
+    "name": "서산 창리",
+    "area": "충남 천수만",
+    "lat": 36.6163,
+    "lon": 126.3717
+  },
   "status": {
-    "observed_at":"2021-08-11", "sst_basis":"daily_mean",
-    "current_sst":null,      "current_sst_raw":null,
-    "daily_max_sst":28.60,   "daily_max_sst_raw":28.6000,
-    "climatology_mean":null, "climatology_mean_raw":null,
-    "anomaly":null,          "anomaly_raw":null,
-    "stage":"withheld", "stage_label":"판정 보류",
-    "days_over_advisory":0,
-    "stage_caveat":"공식 특보는 해역 단위이며 전망을 포함합니다. 이 값은 관측점 재계산치입니다."
+    "observed_at": "2021-08-11",
+    "sst_basis": "daily_mean",
+    "current_sst": null,
+    "current_sst_raw": null,
+    "daily_max_sst": 28.6,
+    "daily_max_sst_raw": 28.6,
+    "climatology_mean": null,
+    "climatology_mean_raw": null,
+    "anomaly": null,
+    "anomaly_raw": null,
+    "stage": "withheld",
+    "stage_label": "판정 보류",
+    "days_over_advisory": 0,
+    "stage_caveat": "공식 특보는 해역 단위이며 전망을 포함합니다. 이 값은 관측점 재계산치입니다."
   },
-
   "data_quality": {
-    "sst_missing_rate":0.396, "obs_count":29,
-    "judgment_withheld":true, "withheld_reason":null
+    "sst_missing_rate": 0.417,
+    "obs_count": 14,
+    "judgment_withheld": true,
+    "withheld_reason": null
   },
-
   "groups": [],
   "conditions": [],
-
-  "adoption_threshold":{"percentile":90,"unit":"group_representative_max",
-                        "decided_at":"2026-07-30",
-                        "note":"사전 고정. 결과를 보고 바꾸지 않음"},
-
-  "climatology":{"method":"rolling_5y_min3","years":null,"sample_size":null,
-                 "window_days":21,"is_climate_normal":false,
-                 "note":"기후평년값(30년) 기준에 미달합니다"},
-
-  "explanation":{
-    "plain_template":null,
-    "plain":null,
-    "detailed_template":null, "detailed":null,
-    "verification":{"passed":false,"retries":0,"blocked":true}},
-
-  "disclaimer":"이 서비스는 국립수산과학원의 공식 특보를 대신하지 않습니다."
+  "adoption_threshold": {
+    "percentile": 90,
+    "unit": "group_representative_max",
+    "decided_at": "2026-07-30",
+    "note": "사전 고정. 결과를 보고 바꾸지 않음"
+  },
+  "climatology": {
+    "method": "rolling_5y_min3",
+    "years": 4,
+    "sample_size": 167,
+    "window_days": 21,
+    "is_climate_normal": false,
+    "note": "기후평년값(30년) 기준에 미달합니다"
+  },
+  "explanation": {
+    "plain_template": null,
+    "plain": null,
+    "detailed_template": null,
+    "detailed": null,
+    "verification": {
+      "passed": false,
+      "retries": 0,
+      "blocked": true
+    }
+  },
+  "disclaimer": "이 서비스는 국립수산과학원의 공식 특보를 대신하지 않습니다."
 }
