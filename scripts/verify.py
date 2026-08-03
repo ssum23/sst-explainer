@@ -935,6 +935,34 @@ STAGE_LABEL = {'normal': '특보 기준 미만', 'preliminary': '예비특보 �
                'advisory': '주의보 기준 도달', 'warning': '경보 기준 도달',
                'withheld': '판정 보류'}
 
+# ── §12 일정 ③ 스키마 확정 (2026-08-03) ──────────────────────────
+#
+# schema_version 2.0. 기준 — 필드가 늘기만 하면 minor, 기존 필드의 뜻·값 범위가
+# 바뀌면 major. obs_count 만점이 48 → 24 로 바뀌어 48 을 가정한 소비자가 조용히
+# 틀리므로 major 다. climatology.sample_size 정의(#38)와 adopted:null 의 실제
+# 사용도 같은 성격이다.
+SCHEMA_VERSION = '2.0'
+
+# stage 가 withheld 인 것은 수온을 못 믿는 경우뿐이다 (결정 1 「가」).
+#   평년 3년 미만 · ASOS 미산출은 stage 를 정상값으로 두고
+#   해당 값만 null, 그룹은 adopted:null 로 표현한다.
+#   stage 는 일평균의 절대값(25/28℃)으로 정해지므로 평년이 없어도 낼 수 있다.
+WITHHELD_REASON = {
+    'sst_missing': '결측률이 20%를 넘음',
+    'sst_absent': '그날 관측 행이 아예 없음',
+    # station_not_started 는 **근거 파일에서 나타나지 않는다.**
+    # §3 이 2017~2019 는 근거 파일을 만들지 않는다고 했고 2020 년 이후는 전부
+    # 개시 후다. §13 보류율 집계(2017~2021)에서만 쓴다 — 31 일 중 29 일이 여기다.
+    'station_not_started': '관측 개시 전 (§13 집계 전용)',
+}
+
+# factors[].quality — §8:870 이 ok·partial 이라 적어 두고 정의하지 않은 자리
+QUALITY = {
+    'ok': '값과 백분위를 둘 다 냈다',
+    'partial': '값은 냈고 백분위를 못 냈다 (평년 표본이 없음)',
+    # None → 값도 못 냈다. adopted:null 과 함께 온다
+}
+
 # 예비특보 25℃ 는 2024년 6월 이후 기준이다. 그 이전은 normal (§8)
 PRELIM_FROM = dt.date(2024, 6, 1)
 
@@ -998,9 +1026,13 @@ def evidence(D, sst, solar, tmax):
     out['clim'] = (sum(smp) / len(smp)) if smp else None
 
     if withheld:
-        out.update(stage='withheld', mean=None, anomaly=None,
-                   days_over=0, groups=None)
+        # 겹칠 때는 수온이 먼저다 — 수온이 없으면 평년을 따질 것도 없다 (결정 3).
+        # 평년이 모자랐다는 사실은 climatology.years 로 드러난다.
+        out.update(stage='withheld', mean=None, anomaly=None, days_over=0,
+                   groups=None,
+                   reason='sst_absent' if n_obs == 0 else 'sst_missing')
         return out
+    out['reason'] = None
 
     out['mean'] = mean
     out['anomaly'] = (mean - out['clim']) if out['clim'] is not None else None
@@ -1070,6 +1102,68 @@ def evidence(D, sst, solar, tmax):
     return out
 
 
+def check_schema(doc):
+    """§8 스키마 불변식 — ③ 에서 확정한 규칙을 강제한다. 어긋난 것들의 목록을 낸다."""
+    bad = []
+    st, dq = doc.get('status', {}), doc.get('data_quality', {})
+
+    def want(cond, msg):
+        if not cond:
+            bad.append(msg)
+
+    want(doc.get('schema_version') == SCHEMA_VERSION,
+         'schema_version 이 %s 가 아니다: %r' % (SCHEMA_VERSION, doc.get('schema_version')))
+
+    # 결정 5 — judgment_withheld 는 stage=='withheld' 의 파생값이다
+    wh = st.get('stage') == 'withheld'
+    want(dq.get('judgment_withheld') is wh,
+         'judgment_withheld(%r) 가 stage(%r) 와 어긋난다'
+         % (dq.get('judgment_withheld'), st.get('stage')))
+
+    # 결정 2 — withheld_reason 은 보류일에만, 그리고 enum 안에서
+    r = dq.get('withheld_reason')
+    want((r is not None) == wh,
+         'withheld_reason(%r) 은 보류일에만 있어야 한다 (stage=%r)' % (r, st.get('stage')))
+    want(r is None or r in WITHHELD_REASON, 'withheld_reason 이 enum 밖이다: %r' % r)
+    want(r != 'station_not_started',
+         'station_not_started 는 근거 파일에 나타나지 않는다 (§13 집계 전용)')
+
+    # 결정 1 — 보류일 규약은 수온 사유일 때만 적용된다 (§8 「보류일에 담는 것」)
+    if wh:
+        for k in ('current_sst', 'current_sst_raw', 'climatology_mean',
+                  'climatology_mean_raw', 'anomaly', 'anomaly_raw'):
+            want(st.get(k) is None, '보류일인데 %s 가 비어 있지 않다: %r' % (k, st.get(k)))
+        want(doc.get('groups') == [], '보류일인데 groups 가 [] 가 아니다')
+
+    # 결정 7 — 실시간이면 daily_max_sst 는 없다.
+    # 「최근 24시간 최고값」은 일 최고수온이 아니라 다른 물건이고,
+    # daily_max_sst 는 30분(만점 48) 기준으로 남겨 두었다 (CHANGES #3).
+    if st.get('sst_basis') == 'rolling_24h':
+        want(st.get('daily_max_sst') is None and st.get('daily_max_sst_raw') is None,
+             'rolling_24h 인데 daily_max_sst 가 있다: %r' % st.get('daily_max_sst'))
+
+    # 결정 4 — quality enum, 그리고 adopted:null 과의 관계
+    for g in doc.get('groups', []):
+        unknown = g.get('adopted') is None
+        want(not unknown or g.get('representative_percentile') is None,
+             '%s: adopted 가 null 인데 representative_percentile 이 있다' % g.get('id'))
+        for f in g.get('factors', []):
+            q = f.get('quality')
+            want(q is None or q in QUALITY, '%s: quality 가 enum 밖이다: %r' % (f.get('id'), q))
+            if q == 'ok':
+                want(f.get('value_raw') is not None and f.get('percentile') is not None,
+                     '%s: quality=ok 인데 값이나 백분위가 없다' % f.get('id'))
+            elif q == 'partial':
+                want(f.get('value_raw') is not None and f.get('percentile') is None,
+                     '%s: quality=partial 은 값만 있고 백분위가 없어야 한다' % f.get('id'))
+            else:
+                want(f.get('value_raw') is None and f.get('percentile') is None,
+                     '%s: quality 가 null 인데 값이 있다' % f.get('id'))
+            if f.get('percentile') is None:
+                want(unknown, '%s: 백분위가 없는데 그룹이 adopted:null 이 아니다' % f.get('id'))
+    return bad
+
+
 SAMPLES = (('견본 A', 'data/fsch6.json', dt.date(2021, 7, 31)),
            ('견본 B', 'data/sample-b.json', dt.date(2021, 8, 5)),
            ('견본 C', 'data/sample-c.json', dt.date(2021, 8, 11)))
@@ -1088,9 +1182,13 @@ def apply_evidence(doc, e):
                      ('anomaly', e['anomaly'])):
         st[key] = num(val, 2) if not e['withheld'] else None
         st[key + '_raw'] = num(val, 4) if not e['withheld'] else None
+    doc['schema_version'] = SCHEMA_VERSION
     dq['obs_count'] = e['obs_count']
     dq['sst_missing_rate'] = num(e['missing'], 3)
-    dq['judgment_withheld'] = e['withheld']
+    # judgment_withheld 는 stage == 'withheld' 의 파생값이다 (결정 5).
+    # 둘이 어긋나면 check_schema 가 잡는다.
+    dq['judgment_withheld'] = (e['stage'] == 'withheld')
+    dq['withheld_reason'] = e['reason']
     doc['climatology']['years'] = e['clim_years']
     doc['climatology']['sample_size'] = e['clim_n']
 
@@ -1112,9 +1210,9 @@ def apply_evidence(doc, e):
                 pcts.append(None)
                 continue
             f.update(value=num(c['value'], 2), value_raw=num(c['value'], 4),
-                     percentile=num(c['pct'], 1),
-                     clim_sample_size=c['n'], quality='ok')
-            pcts.append(round_half_up(c['pct'], 1))
+                     percentile=num(c['pct'], 1), clim_sample_size=c['n'],
+                     quality='ok' if c['pct'] is not None else 'partial')
+            pcts.append(round_half_up(c['pct'], 1) if c['pct'] is not None else None)
         if any(p is None for p in pcts):
             g['adopted'] = None
             g['representative_percentile'] = None
@@ -1155,6 +1253,11 @@ def run_evidence(solar, tmax, sst, write=False):
                 print('      %-12s %-9s %-6s 표본 %-5s as_of %s'
                       % (f['id'], f['value_raw'], f['percentile'],
                          f['clim_sample_size'], f['as_of']))
+        bad = check_schema(want)
+        print('   스키마 검사 %s' % ('통과' if not bad else '**실패**'))
+        for m in bad:
+            print('      · ' + m)
+        ok = ok and not bad
         if write:
             want['generated_at'] = GENERATED_AT
             with open(path, 'w', encoding='utf-8') as fh:

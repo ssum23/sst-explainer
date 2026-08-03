@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "_note": "견본 A (PRD §9). scripts/verify.py 가 원자료에서 생성한다 (`python3 scripts/verify.py build`). 화면은 읽지 않는다.",
   "_unconfirmed": {
     "설명": "코드가 계산하지 못해 비어 있는 값.",
