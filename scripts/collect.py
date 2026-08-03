@@ -40,6 +40,7 @@ import datetime as dt
 import json
 import os
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -82,17 +83,22 @@ def verdict(msg):
 
 
 def fetch(key):
-    """응답 바이트. 실패하면 None — 사유는 종류만 찍는다 (URL 유출 방지)"""
+    """(응답 바이트, 사유). 성공하면 사유는 None.
+
+    사유를 **문자열로 돌려준다** — 로그에만 찍고 「위 줄이 사유다」라고 하면
+    실행 요약에서 무엇이 잘못됐는지 알 수 없다. 2026-08-03 에 실제로 그랬다.
+    """
     url = '%s?%s' % (URL, urllib.parse.urlencode({'id': 'risaList', 'key': key}))
     try:
         with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
             if r.status != 200:
-                log('HTTP %s' % r.status)
-                return None
-            return r.read()
+                return None, 'HTTP %s' % r.status
+            return r.read(), None
+    except urllib.error.HTTPError as e:
+        # 메시지에 URL(=키)이 들어가므로 상태코드만 쓴다
+        return None, 'HTTPError %s' % e.code
     except Exception as e:
-        log('호출 실패 (%s)' % type(e).__name__)
-        return None
+        return None, '호출 실패 (%s)' % type(e).__name__
 
 
 def decode(raw):
@@ -105,29 +111,26 @@ def decode(raw):
 
 
 def rows_of(raw):
-    """응답 → 창리 행 목록. 하나라도 이상하면 빈 목록"""
-    if not raw:
-        return []
+    """(창리 행 목록, 사유). 성공하면 사유는 None"""
     text, enc = decode(raw)
     if text is None:
-        log('디코드 실패 (%d바이트)' % len(raw))
-        return []
+        return [], '디코드 실패 (%d바이트)' % len(raw)
     if enc != 'utf-8':
         log('주의: 응답이 %s 로 왔다. 실측(2026-08-03)은 UTF-8 이었다' % enc)
     try:
         doc = json.loads(text)
     except ValueError:
-        log('JSON 파싱 실패 (%d바이트)' % len(raw))
-        return []
-    code = (doc.get('header') or {}).get('resultCode')
+        head = text[:60].replace('\n', ' ')
+        return [], 'JSON 파싱 실패 (%d바이트, 앞부분 %r)' % (len(raw), head)
+    header = doc.get('header') or {}
+    code = header.get('resultCode')
     if code != '00':
-        log('resultCode=%r' % code)
-        return []
+        return [], 'resultCode=%r resultMsg=%r' % (code, header.get('resultMsg'))
     items = (doc.get('body') or {}).get('item') or []
     got = [x for x in items if x.get('sta_cde') == STATION]
     if not got:
-        log('전국 %d행을 받았으나 %s 가 없다' % (len(items), STATION))
-    return got
+        return [], '전국 %d행을 받았으나 %s 가 없다' % (len(items), STATION)
+    return got, None
 
 
 def main():
@@ -136,9 +139,12 @@ def main():
         return verdict('건너뜀 — NIFS_KEY 가 비어 있다 '
                        '(저장소 Secrets 에 NIFS_KEY 가 있는지 · 이름 오타가 없는지 확인)')
 
-    got = rows_of(fetch(key))
+    raw, why = fetch(key)
+    if raw is None:
+        return verdict('건너뜀 — %s. 이전 파일을 그대로 둔다' % why)
+    got, why = rows_of(raw)
     if not got:
-        return verdict('건너뜀 — 쌓을 것이 없다. 위 줄이 사유다. 이전 파일을 그대로 둔다')
+        return verdict('건너뜀 — %s. 이전 파일을 그대로 둔다' % why)
 
     now = dt.datetime.now(KST)
     # fetched_at 을 남기는 이유 — CHANGES #20.
