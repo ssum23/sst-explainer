@@ -1,0 +1,49 @@
+# 실시간 수온 수집 — 받아서 쌓기만 한다 (§12 갱신 파이프라인)
+#
+# risaList 는 최신 스냅숏만 주고 기간 조회가 없다. 실시간 값은 우리가 쌓아야
+# 존재하게 되고, 오늘 안 받으면 오늘 것은 영영 없다.
+#
+# 계산·화면·evidence.json 은 건드리지 않는다. 화면은 항상 돌아가야 한다(§12).
+
+name: 실시간 수온 수집
+
+on:
+  schedule:
+    # 매시 :05. GitHub Actions cron 은 5~20분 늦는 일이 흔하므로
+    # :00 관측을 잡을 확률이 가장 높은 자리에 둔다. 늦게 받아도 버리지 않는다.
+    - cron: '5 * * * *'
+  workflow_dispatch:        # 웹에서 손으로 한 번 돌릴 수 있게
+
+permissions:
+  contents: write           # data/realtime 에 커밋한다
+
+concurrency:
+  # 앞 실행이 밀렸을 때 겹쳐 돌아 push 가 충돌하는 것을 막는다.
+  # 취소하지 않는다 — 한 시간치를 잃느니 줄 서는 편이 낫다.
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 받아서 쌓기
+        env:
+          NIFS_KEY: ${{ secrets.NIFS_KEY }}
+        run: python3 scripts/collect.py
+
+      - name: 변경이 있으면 커밋
+        run: |
+          if [ -z "$(git status --porcelain data/realtime)" ]; then
+            echo "변경 없음 — 커밋하지 않는다"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/realtime
+          git commit -q -m "실시간 수집 $(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')"
+          # 앞 실행이 먼저 밀어 넣었을 수 있다. 다시 얹고 민다.
+          git pull --rebase --autostash -q origin main || true
+          git push -q origin HEAD:main
