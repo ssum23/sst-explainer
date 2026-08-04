@@ -23,3 +23,6 @@
 data/api/고수온속보/
 data/api/특보기준/
 data/api/해양지명/
+
+# 수집 로그 — 기기별이고 매시 늘어난다
+data/realtime/collect.log
