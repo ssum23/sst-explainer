@@ -20,3 +20,5 @@
 {"fetched_at": "2026-08-04T13:05:05+09:00", "sta_cde": "fsch6", "sta_nam_kor": "서산 창리", "obs_dat": "2026-08-04", "obs_tim": "12:30:00", "obs_lay": "2", "wtr_tmp": "28.9", "repair_gbn": "1", "rpr_yn": "N"}
 {"fetched_at": "2026-08-04T14:05:01+09:00", "sta_cde": "fsch6", "sta_nam_kor": "서산 창리", "obs_dat": "2026-08-04", "obs_tim": "13:30:00", "obs_lay": "1", "wtr_tmp": "29.4", "repair_gbn": "1", "rpr_yn": "N"}
 {"fetched_at": "2026-08-04T14:05:01+09:00", "sta_cde": "fsch6", "sta_nam_kor": "서산 창리", "obs_dat": "2026-08-04", "obs_tim": "13:30:00", "obs_lay": "2", "wtr_tmp": "28.8", "repair_gbn": "1", "rpr_yn": "N"}
+{"fetched_at": "2026-08-04T15:05:05+09:00", "sta_cde": "fsch6", "sta_nam_kor": "서산 창리", "obs_dat": "2026-08-04", "obs_tim": "14:30:00", "obs_lay": "1", "wtr_tmp": "29.1", "repair_gbn": "1", "rpr_yn": "N"}
+{"fetched_at": "2026-08-04T15:05:05+09:00", "sta_cde": "fsch6", "sta_nam_kor": "서산 창리", "obs_dat": "2026-08-04", "obs_tim": "14:30:00", "obs_lay": "2", "wtr_tmp": "28.4", "repair_gbn": "1", "rpr_yn": "N"}
